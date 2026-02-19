@@ -1,7 +1,7 @@
 import RainbowStripe from "@/components/RainbowStripe";
 import Masthead from "@/components/Masthead";
 import FilterBar from "@/components/FilterBar";
-import ArticleList from "@/components/ArticleList";
+import ArticleGrid from "@/components/ArticleGrid";
 import SiteFooter from "@/components/SiteFooter";
 import { useArticles } from "@/hooks/useArticles";
 
@@ -30,8 +30,8 @@ const Index = () => {
         isFiltered={isFiltered}
         clearFilters={clearFilters}
       />
-      <div className="pt-4">
-        <ArticleList
+      <div className="pt-4 pb-8">
+        <ArticleGrid
           articles={articles}
           loading={loading}
           error={error}

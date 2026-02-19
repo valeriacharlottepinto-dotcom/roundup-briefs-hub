@@ -77,7 +77,7 @@ const FilterBar = ({
 
   return (
     <div className="sticky top-0 z-30 bg-card border-b border-border">
-      <div className="max-w-[860px] mx-auto px-4 py-3 space-y-3">
+      <div className="max-w-[1100px] mx-auto px-4 py-3 space-y-3">
         {/* ROW A — Topics */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
           {TOPICS.map((t) => {
@@ -90,7 +90,7 @@ const FilterBar = ({
                 key={t.label}
                 onClick={() => toggleTopic(t.label)}
                 className={`
-                  flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors
+                  flex-shrink-0 px-3 py-1.5 rounded-sm text-xs font-medium transition-colors
                   whitespace-nowrap select-none
                   ${
                     active
@@ -112,7 +112,7 @@ const FilterBar = ({
               key={t.value}
               onClick={() => selectTime(t.value)}
               className={`
-                px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap select-none
+                px-3 py-1.5 rounded-sm text-xs font-medium transition-colors whitespace-nowrap select-none
                 ${
                   filters.timeRange === t.value
                     ? "bg-chip-active text-chip-active-foreground"

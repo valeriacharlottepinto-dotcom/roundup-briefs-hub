@@ -11,7 +11,7 @@ const Masthead = ({ stats }: MastheadProps) => {
     : null;
 
   return (
-    <header className="max-w-[860px] mx-auto px-4 pt-8 pb-4">
+    <header className="max-w-[1100px] mx-auto px-4 pt-8 pb-4">
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2">
         <div>
           <h1 className="font-serif-display text-4xl sm:text-5xl font-bold tracking-tight text-foreground">
