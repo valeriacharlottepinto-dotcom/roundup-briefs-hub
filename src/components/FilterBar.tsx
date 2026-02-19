@@ -14,7 +14,7 @@ const ALL_SOURCES = [
   // Progressive & Investigative
   "AlterNet", "Democracy Now", "FSRN", "Jewish Voice for Peace",
   "Le Monde Diplomatique", "The Progressive", "Reveal News",
-  "Accuracy in Media", "Media Matters", "Der Standard",
+  "Accuracy in Media", "Media Matters",
   // Women & Feminist
   "The Guardian Women", "Ms. Magazine", "Feministing", "Jezebel",
   "Refinery29 Feminism", "The Funambulist",
