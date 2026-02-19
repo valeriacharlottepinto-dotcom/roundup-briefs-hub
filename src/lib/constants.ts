@@ -1,5 +1,4 @@
 export const API_BASE = "https://roundup-briefs.onrender.com";
-
 export interface Article {
   id: number;
   title: string;
@@ -11,15 +10,14 @@ export interface Article {
   tags: string;
   topics: string;
   scraped_at: string;
+  published_at?: string;
 }
-
 export interface Stats {
   total: number;
   lgbtqia_plus: number;
   women: number;
   last_scraped: string;
 }
-
 export const TOPICS = [
   { label: "All Topics", emoji: "✨" },
   { label: "Reproductive Rights", emoji: "🩺" },
@@ -35,11 +33,9 @@ export const TOPICS = [
   { label: "Violence & Safety", emoji: "🛡️" },
   { label: "Workplace & Economics", emoji: "💼" },
 ] as const;
-
 export const TIME_RANGES = [
   { label: "Today", value: "today" },
 ] as const;
-
 export const TOPIC_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   "Reproductive Rights": { bg: "#FFE5EF", text: "#C8003C", border: "#F0ADC8" },
   "Gender Pay Gap":      { bg: "#FFF3E0", text: "#E65100", border: "#FFCC80" },
@@ -54,17 +50,14 @@ export const TOPIC_COLORS: Record<string, { bg: string; text: string; border: st
   "Violence & Safety":   { bg: "#FFEBEE", text: "#C62828", border: "#EF9A9A" },
   "Workplace & Economics": { bg: "#ECEFF1", text: "#37474F", border: "#B0BEC5" },
 };
-
 export const LGBTQIA_SOURCES = new Set([
   "Gay Times", "PinkNews", "Out Magazine", "LGBTQ Nation", "Advocate",
   "Autostraddle", "Them", "Queerty", "Xtra Magazine",
 ]);
-
 export const FEMINIST_SOURCES = new Set([
   "Ms. Magazine", "Feministing", "Jezebel", "Refinery29 Feminism",
   "The Guardian Women", "The Funambulist",
 ]);
-
 export function getSourceBorderColor(source: string): string {
   if (LGBTQIA_SOURCES.has(source)) return "#4A1FA8";
   if (FEMINIST_SOURCES.has(source)) return "#D4006A";
