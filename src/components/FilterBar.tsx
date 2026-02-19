@@ -3,6 +3,50 @@ import { TOPICS } from "@/lib/constants";
 import { type Filters } from "@/hooks/useArticles";
 import { Search, X } from "lucide-react";
 
+// All 37 sources — hardcoded so the dropdown is always complete
+const ALL_SOURCES = [
+  // General / World News
+  "BBC News",
+  "BBC News World",
+  "The Guardian",
+  "Reuters",
+  "Reuters World",
+  "Al Jazeera",
+  "NPR News",
+  "The Independent",
+  "HuffPost",
+  "New York Times",
+  "Associated Press",
+  "CNN World",
+  "Washington Post",
+  "Financial Times",
+  "CBC News World",
+  "ABC News",
+  "SBS News World",
+  "Le Monde",
+  "IPS News Agency",
+  "The Conversation",
+  "Global Voices",
+  "Fair Observer",
+  // Women & Feminist
+  "The Guardian Women",
+  "Ms. Magazine",
+  "Feministing",
+  "Jezebel",
+  "Refinery29 Feminism",
+  "The Funambulist",
+  // LGBTQIA+
+  "Gay Times",
+  "PinkNews",
+  "Out Magazine",
+  "LGBTQ Nation",
+  "Advocate",
+  "Autostraddle",
+  "Them",
+  "Queerty",
+  "Xtra Magazine",
+];
+
 interface FilterBarProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
@@ -15,7 +59,6 @@ interface FilterBarProps {
 const FilterBar = ({
   filters,
   setFilters,
-  sources,
   articleCount,
   isFiltered,
   clearFilters,
@@ -165,7 +208,7 @@ const FilterBar = ({
             className="text-xs px-2 py-1.5 rounded-sm border border-border bg-card text-foreground"
           >
             <option value="">All Sources</option>
-            {sources.map((s) => (
+            {ALL_SOURCES.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
