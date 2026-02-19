@@ -3,24 +3,19 @@ import { TOPICS } from "@/lib/constants";
 import { type Filters } from "@/hooks/useArticles";
 import { Search, X, ChevronDown, Check } from "lucide-react";
 
-// All sources — hardcoded so dropdown is always complete
+// All sources — sorted alphabetically
 const ALL_SOURCES = [
-  // General / World News
-  "BBC News", "BBC News World", "The Guardian", "Reuters", "Reuters World",
-  "Al Jazeera", "NPR News", "The Independent", "HuffPost", "New York Times",
-  "Associated Press", "CNN World", "Washington Post", "Financial Times",
-  "CBC News World", "ABC News", "SBS News World", "Le Monde", "IPS News Agency",
-  "The Conversation", "Global Voices", "Fair Observer",
-  // Progressive & Investigative
-  "AlterNet", "Democracy Now", "FSRN", "Jewish Voice for Peace",
-  "Le Monde Diplomatique", "The Progressive", "Reveal News",
-  "Accuracy in Media", "Media Matters",
-  // Women & Feminist
-  "The Guardian Women", "Ms. Magazine", "Feministing", "Jezebel",
-  "Refinery29 Feminism", "The Funambulist",
-  // LGBTQIA+
-  "Gay Times", "PinkNews", "Out Magazine", "LGBTQ Nation", "Advocate",
-  "Autostraddle", "Them", "Queerty", "Xtra Magazine",
+  "ABC News", "Accuracy in Media", "Advocate", "Al Jazeera", "AlterNet",
+  "Associated Press", "Autostraddle", "BBC News", "BBC News World",
+  "CBC News World", "CNN World", "Democracy Now", "Fair Observer",
+  "Feministing", "Financial Times", "FSRN", "Gay Times", "Global Voices",
+  "HuffPost", "IPS News Agency", "Jezebel", "Jewish Voice for Peace",
+  "Le Monde", "Le Monde Diplomatique", "LGBTQ Nation", "Media Matters",
+  "Ms. Magazine", "New York Times", "NPR News", "Out Magazine", "PinkNews",
+  "Queerty", "Refinery29 Feminism", "Reveal News", "Reuters", "Reuters World",
+  "SBS News World", "The Conversation", "The Funambulist", "The Guardian",
+  "The Guardian Women", "The Independent", "The Progressive", "Them",
+  "Washington Post", "Xtra Magazine",
 ];
 
 interface FilterBarProps {
@@ -238,9 +233,10 @@ const FilterBar = ({
                   return (
                     <label
                       key={s}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-secondary cursor-pointer"
+                      onClick={() => toggleSource(s)}
+                      className="flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-secondary cursor-pointer select-none"
                     >
-                      <span className={`flex-shrink-0 w-3.5 h-3.5 border rounded-none flex items-center justify-center ${checked ? "bg-chip-active border-chip-active" : "border-border bg-background"}`}>
+                      <span className={`flex-shrink-0 w-3.5 h-3.5 border rounded-none flex items-center justify-center transition-colors ${checked ? "bg-chip-active border-chip-active" : "border-border bg-background"}`}>
                         {checked && <Check size={9} className="text-chip-active-foreground" />}
                       </span>
                       <span className={checked ? "text-foreground font-medium" : "text-muted-foreground"}>
