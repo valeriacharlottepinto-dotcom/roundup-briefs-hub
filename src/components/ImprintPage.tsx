@@ -13,31 +13,30 @@ const ImprintPage = ({ onClose }: ImprintPageProps) => {
         ← back
       </button>
 
-      <h1 className="text-lg font-semibold text-foreground mb-6">Impressum</h1>
-
-      <p className="text-[0.85rem] text-muted-foreground mb-4">
-        Angaben gemäß § 5 TMG
+      <h1 className="text-lg font-semibold text-foreground mb-1">Impressum / Imprint</h1>
+      <p className="text-[0.85rem] text-muted-foreground mb-6">
+        Legal disclosure pursuant to § 5 TMG (German Telemedia Act)
       </p>
 
       <p className="text-[0.9rem] text-foreground leading-relaxed mb-6">
         Valeria Pinto<br />
         F4<br />
         68159 Mannheim<br />
-        Deutschland
+        Germany
       </p>
 
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-        Kontakt
+        Contact
       </p>
       <p className="text-[0.9rem] text-foreground mb-6">
-        E-Mail:{" "}
+        Email:{" "}
         <a href="mailto:sharedgroundnews@gmail.com" className="underline underline-offset-2">
           sharedgroundnews@gmail.com
         </a>
       </p>
 
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-        Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV
+        Responsible for content pursuant to § 18 Abs. 2 MStV
       </p>
       <p className="text-[0.9rem] text-foreground leading-relaxed mb-6">
         Valeria Pinto<br />
@@ -45,12 +44,12 @@ const ImprintPage = ({ onClose }: ImprintPageProps) => {
       </p>
 
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
-        Haftungsausschluss
+        Disclaimer
       </p>
       <p className="text-[0.85rem] text-muted-foreground leading-relaxed">
-        shared ground aggregiert Artikel aus externen RSS-Feeds und ist nicht
-        verantwortlich für den Inhalt verlinkter Seiten. Für die Inhalte
-        externer Seiten sind ausschließlich deren Betreiber verantwortlich.
+        shared ground aggregates articles from external RSS feeds and is not
+        responsible for the content of linked pages. The respective operators
+        are solely responsible for the content of their sites.
       </p>
 
     </main>
