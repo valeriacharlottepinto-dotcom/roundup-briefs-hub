@@ -89,6 +89,10 @@ const FilterBar = ({
     [setFilters]
   );
 
+  const toggleFreeOnly = useCallback(() => {
+    setFilters((f) => ({ ...f, freeOnly: !f.freeOnly }));
+  }, [setFilters]);
+
   const selectToday = useCallback(() => {
     setFilters((f) => ({
       ...f,
@@ -204,6 +208,20 @@ const FilterBar = ({
               className="w-full text-xs pl-8 pr-3 py-1.5 rounded-sm border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
+
+          {/* Free only toggle */}
+          <button
+            onClick={toggleFreeOnly}
+            className={`
+              flex-shrink-0 px-3 py-1.5 rounded-sm text-xs font-medium transition-colors whitespace-nowrap select-none
+              ${filters.freeOnly
+                ? "bg-chip-active text-chip-active-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-border"}
+            `}
+            title="Hide articles from paywalled sources (NYT, FT, Washington Post)"
+          >
+            🔓 Free only
+          </button>
 
           {/* Multi-select source dropdown */}
           <div ref={sourceRef} className="relative">
