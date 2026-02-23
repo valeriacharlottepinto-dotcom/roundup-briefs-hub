@@ -11,6 +11,7 @@ export interface Article {
   topics: string;
   scraped_at: string;
   published_at?: string;
+  is_paywalled?: boolean;
 }
 export interface Stats {
   total: number;
