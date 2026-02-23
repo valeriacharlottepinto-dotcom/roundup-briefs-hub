@@ -4,11 +4,13 @@ import FilterBar from "@/components/FilterBar";
 import ArticleGrid from "@/components/ArticleGrid";
 import SiteFooter from "@/components/SiteFooter";
 import AboutPage from "@/components/AboutPage";
+import ImprintPage from "@/components/ImprintPage";
 import ScrollButtons from "@/components/ScrollButton";
 import { useArticles } from "@/hooks/useArticles";
 
 const Index = () => {
   const [showAbout, setShowAbout] = useState(false);
+  const [showImprint, setShowImprint] = useState(false);
   const {
     articles,
     stats,
@@ -21,15 +23,32 @@ const Index = () => {
     clearFilters,
   } = useArticles();
 
+  const handleAboutToggle = () => {
+    setShowAbout((v) => !v);
+    setShowImprint(false);
+  };
+
+  const handleImprintOpen = () => {
+    setShowImprint(true);
+    setShowAbout(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleImprintClose = () => {
+    setShowImprint(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Masthead
         stats={stats}
         showAbout={showAbout}
-        onAboutToggle={() => setShowAbout((v) => !v)}
+        onAboutToggle={handleAboutToggle}
       />
 
-      {showAbout ? (
+      {showImprint ? (
+        <ImprintPage onClose={handleImprintClose} />
+      ) : showAbout ? (
         <AboutPage />
       ) : (
         <>
@@ -54,6 +73,17 @@ const Index = () => {
       )}
 
       <SiteFooter />
+
+      {/* Impressum link — fixed at very bottom */}
+      <div className="w-full text-center py-3 border-t border-border bg-background">
+        <button
+          onClick={handleImprintOpen}
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+        >
+          Impressum
+        </button>
+      </div>
+
       <ScrollButtons />
     </div>
   );
