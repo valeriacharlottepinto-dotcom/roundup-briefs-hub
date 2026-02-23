@@ -8,6 +8,7 @@ export interface Filters {
   dateFrom: string;
   dateTo: string;
   search: string;
+  freeOnly: boolean;
 }
 
 const defaultFilters: Filters = {
@@ -17,6 +18,7 @@ const defaultFilters: Filters = {
   dateFrom: "",
   dateTo: "",
   search: "",
+  freeOnly: false,
 };
 
 export function useArticles() {
@@ -61,7 +63,8 @@ export function useArticles() {
       filters.timeRange !== null ||
       filters.dateFrom !== "" ||
       filters.dateTo !== "" ||
-      filters.search !== ""
+      filters.search !== "" ||
+      filters.freeOnly
     );
   }, [filters]);
 
@@ -104,6 +107,9 @@ export function useArticles() {
         to.setDate(to.getDate() + 1);
         if (articleDate >= to) return false;
       }
+
+      // Free only filter
+      if (filters.freeOnly && article.is_paywalled) return false;
 
       // Search
       if (filters.search) {
