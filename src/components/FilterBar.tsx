@@ -209,20 +209,6 @@ const FilterBar = ({
             />
           </div>
 
-          {/* Free only toggle */}
-          <button
-            onClick={toggleFreeOnly}
-            className={`
-              flex-shrink-0 px-3 py-1.5 rounded-sm text-xs font-medium transition-colors whitespace-nowrap select-none
-              ${filters.freeOnly
-                ? "bg-chip-active text-chip-active-foreground"
-                : "bg-secondary text-secondary-foreground hover:bg-border"}
-            `}
-            title="Hide articles from paywalled sources (NYT, FT, Washington Post)"
-          >
-            🔓 Free only
-          </button>
-
           {/* Multi-select source dropdown */}
           <div ref={sourceRef} className="relative">
             <button
@@ -266,6 +252,20 @@ const FilterBar = ({
               </div>
             )}
           </div>
+
+          {/* Free only toggle — sits right next to the source dropdown */}
+          <button
+            onClick={toggleFreeOnly}
+            className={`
+              flex-shrink-0 px-3 py-1.5 rounded-sm text-xs font-medium transition-colors whitespace-nowrap select-none
+              ${filters.freeOnly
+                ? "bg-chip-active text-chip-active-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-border"}
+            `}
+            title="Hide articles from paywalled sources (NYT, FT, Washington Post)"
+          >
+            🔓 Free only
+          </button>
 
           {/* Clear all + count */}
           <div className="flex items-center gap-2 sm:ml-auto">
