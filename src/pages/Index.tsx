@@ -80,7 +80,7 @@ const Index = () => {
           onClick={handleImprintOpen}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
         >
-          Impressum
+          Impressum / Imprint
         </button>
       </div>
 
