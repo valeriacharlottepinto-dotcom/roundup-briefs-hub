@@ -21,6 +21,7 @@ const FilterBar = ({
   setFilters,
   localeSources,
   articleCount,
+  totalCount,
   isFiltered,
   clearFilters,
   t,
