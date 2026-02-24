@@ -38,6 +38,9 @@ const ArticleCard = ({ article }: ArticleCardProps) => {
   const visibleTopics = topics.slice(0, MAX_VISIBLE_TAGS);
   const extraCount = topics.length - MAX_VISIBLE_TAGS;
 
+  // Effective paywall state: DB stores auto-detected value
+  const isPaywalled = article.is_paywalled === true;
+
   return (
     <a
       href={article.link}
@@ -57,13 +60,23 @@ const ArticleCard = ({ article }: ArticleCardProps) => {
 
       <div className="p-5 flex flex-col gap-3">
         {/* Meta row */}
-        <div className="flex items-center justify-between">
-          <span className="inline-block px-2 py-0.5 rounded-sm text-[0.68rem] font-semibold uppercase tracking-wider bg-secondary text-muted-foreground">
+        <div className="flex items-center justify-between gap-2">
+          <span className="inline-block px-2 py-0.5 rounded-sm text-[0.68rem] font-semibold uppercase tracking-wider bg-secondary text-muted-foreground truncate max-w-[55%]">
             {article.source}
           </span>
-          <span className="text-[0.7rem] text-muted-foreground whitespace-nowrap">
-            {dateStr}
-          </span>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {isPaywalled && (
+              <span
+                title="Paywalled article"
+                className="text-[0.7rem] text-amber-500 leading-none select-none"
+              >
+                🔒
+              </span>
+            )}
+            <span className="text-[0.7rem] text-muted-foreground whitespace-nowrap">
+              {dateStr}
+            </span>
+          </div>
         </div>
 
         {/* Headline */}

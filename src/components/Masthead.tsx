@@ -1,14 +1,19 @@
-import { type Stats } from "@/lib/constants";
+import { type Stats, type Locale } from "@/lib/constants";
+import { type Translations } from "@/lib/translations";
 import { format } from "date-fns";
 import ThemeToggle from "./ThemeToggle";
+import { useNavigate } from "react-router-dom";
 
 interface MastheadProps {
   stats: Stats | null;
   showAbout: boolean;
   onAboutToggle: () => void;
+  locale: Locale;
+  t: Translations;
 }
 
-const Masthead = ({ stats, showAbout, onAboutToggle }: MastheadProps) => {
+const Masthead = ({ stats, showAbout, onAboutToggle, locale, t }: MastheadProps) => {
+  const navigate = useNavigate();
   const lastScraped = stats?.last_scraped
     ? format(new Date(stats.last_scraped), "d MMM yyyy, HH:mm")
     : null;
@@ -26,7 +31,7 @@ const Masthead = ({ stats, showAbout, onAboutToggle }: MastheadProps) => {
             shared ground
           </h1>
           <p className="mt-1 text-sm text-muted-foreground font-sans">
-            browse your news on your terms.
+            {t.tagline}
           </p>
         </div>
 
@@ -37,14 +42,42 @@ const Masthead = ({ stats, showAbout, onAboutToggle }: MastheadProps) => {
               onClick={onAboutToggle}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors font-sans"
             >
-              {showAbout ? "← back" : "about"}
+              {showAbout ? t.back : t.about}
             </button>
+
+            {/* Locale toggle */}
+            <div className="flex items-center gap-1 text-xs font-sans">
+              <button
+                onClick={() => navigate("/en")}
+                className={`transition-colors ${
+                  locale === "en"
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label="Switch to English"
+              >
+                EN
+              </button>
+              <span className="text-muted-foreground select-none">/</span>
+              <button
+                onClick={() => navigate("/de")}
+                className={`transition-colors ${
+                  locale === "de"
+                    ? "text-foreground font-semibold"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-label="Zu Deutsch wechseln"
+              >
+                DE
+              </button>
+            </div>
+
             <ThemeToggle />
           </div>
           {!showAbout && stats && (
             <div className="hidden sm:block text-right text-xs text-muted-foreground uppercase tracking-wider font-sans leading-relaxed">
-              <div>{stats.total.toLocaleString()} articles</div>
-              {lastScraped && <div>Updated {lastScraped}</div>}
+              <div>{stats.total.toLocaleString()} {t.articles}</div>
+              {lastScraped && <div>{t.updatedAt} {lastScraped}</div>}
             </div>
           )}
         </div>

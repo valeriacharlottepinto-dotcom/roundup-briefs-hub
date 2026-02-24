@@ -7,10 +7,18 @@ import AboutPage from "@/components/AboutPage";
 import ImprintPage from "@/components/ImprintPage";
 import ScrollButtons from "@/components/ScrollButton";
 import { useArticles } from "@/hooks/useArticles";
+import { SOURCES_BY_LOCALE, type Locale } from "@/lib/constants";
+import { TRANSLATIONS } from "@/lib/translations";
 
-const Index = () => {
+interface IndexProps {
+  locale: Locale;
+}
+
+const Index = ({ locale }: IndexProps) => {
+  const t = TRANSLATIONS[locale];
   const [showAbout, setShowAbout] = useState(false);
   const [showImprint, setShowImprint] = useState(false);
+
   const {
     articles,
     stats,
@@ -18,10 +26,13 @@ const Index = () => {
     error,
     filters,
     setFilters,
-    sources,
     isFiltered,
     clearFilters,
-  } = useArticles();
+    page,
+    setPage,
+    totalPages,
+    totalCount,
+  } = useArticles(locale);
 
   const handleAboutToggle = () => {
     setShowAbout((v) => !v);
@@ -44,6 +55,8 @@ const Index = () => {
         stats={stats}
         showAbout={showAbout}
         onAboutToggle={handleAboutToggle}
+        locale={locale}
+        t={t}
       />
 
       {showImprint ? (
@@ -55,10 +68,13 @@ const Index = () => {
           <FilterBar
             filters={filters}
             setFilters={setFilters}
-            sources={sources}
+            localeSources={SOURCES_BY_LOCALE[locale]}
             articleCount={articles.length}
+            totalCount={totalCount}
             isFiltered={isFiltered}
             clearFilters={clearFilters}
+            locale={locale}
+            t={t}
           />
           <div className="pt-4 pb-8">
             <ArticleGrid
@@ -67,6 +83,10 @@ const Index = () => {
               error={error}
               isFiltered={isFiltered}
               clearFilters={clearFilters}
+              page={page}
+              totalPages={totalPages}
+              setPage={setPage}
+              t={t}
             />
           </div>
         </>

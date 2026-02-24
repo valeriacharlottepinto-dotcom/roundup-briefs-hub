@@ -1,4 +1,5 @@
 import { type Article } from "@/lib/constants";
+import { type Translations } from "@/lib/translations";
 import ArticleCard from "./ArticleCard";
 
 interface ArticleGridProps {
@@ -7,6 +8,10 @@ interface ArticleGridProps {
   error: string | null;
   isFiltered: boolean;
   clearFilters: () => void;
+  page: number;
+  totalPages: number;
+  setPage: (page: number) => void;
+  t: Translations;
 }
 
 const SkeletonTile = () => (
@@ -29,7 +34,17 @@ const SkeletonTile = () => (
   </div>
 );
 
-const ArticleGrid = ({ articles, loading, error, isFiltered, clearFilters }: ArticleGridProps) => {
+const ArticleGrid = ({
+  articles,
+  loading,
+  error,
+  isFiltered,
+  clearFilters,
+  page,
+  totalPages,
+  setPage,
+  t,
+}: ArticleGridProps) => {
   if (loading) {
     return (
       <div className="max-w-[1100px] mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -43,7 +58,7 @@ const ArticleGrid = ({ articles, loading, error, isFiltered, clearFilters }: Art
   if (error) {
     return (
       <div className="max-w-[1100px] mx-auto px-4 py-16 text-center">
-        <p className="text-muted-foreground">{error}</p>
+        <p className="text-muted-foreground">{t.serverWaking}</p>
       </div>
     );
   }
@@ -51,13 +66,13 @@ const ArticleGrid = ({ articles, loading, error, isFiltered, clearFilters }: Art
   if (articles.length === 0) {
     return (
       <div className="max-w-[1100px] mx-auto px-4 py-16 text-center">
-        <p className="text-muted-foreground">No articles match your filters.</p>
+        <p className="text-muted-foreground">{t.noArticles}</p>
         {isFiltered && (
           <button
             onClick={clearFilters}
             className="mt-2 text-sm text-primary hover:underline font-medium"
           >
-            Clear filters
+            {t.clearFilters}
           </button>
         )}
       </div>
@@ -65,11 +80,40 @@ const ArticleGrid = ({ articles, loading, error, isFiltered, clearFilters }: Art
   }
 
   return (
-    <main className="max-w-[1100px] mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-      {articles.map((article) => (
-        <ArticleCard key={article.id} article={article} />
-      ))}
-    </main>
+    <div className="max-w-[1100px] mx-auto px-4">
+      <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {articles.map((article) => (
+          <ArticleCard key={article.id} article={article} />
+        ))}
+      </main>
+
+      {/* Pagination controls — only shown when there's more than one page */}
+      {totalPages > 1 && (
+        <div className="mt-10 flex items-center justify-center gap-4">
+          <button
+            onClick={() => setPage(page - 1)}
+            disabled={page <= 1}
+            className="text-xs px-3 py-1.5 rounded-sm border border-border bg-card text-foreground
+              hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {t.prevPage}
+          </button>
+
+          <span className="text-xs text-muted-foreground select-none">
+            {page} {t.pageOf} {totalPages}
+          </span>
+
+          <button
+            onClick={() => setPage(page + 1)}
+            disabled={page >= totalPages}
+            className="text-xs px-3 py-1.5 rounded-sm border border-border bg-card text-foreground
+              hover:bg-secondary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {t.nextPage}
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 

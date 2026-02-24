@@ -1,43 +1,41 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { TOPICS } from "@/lib/constants";
-import { type Filters } from "@/hooks/useArticles";
+import { TOPICS, type Locale } from "@/lib/constants";
+import { type Filters, type PaywallFilter } from "@/hooks/useArticles";
+import { type Translations } from "@/lib/translations";
 import { Search, X, ChevronDown, Check } from "lucide-react";
-
-// All sources — sorted alphabetically
-const ALL_SOURCES = [
-  "ABC News", "Accuracy in Media", "Advocate", "Al Jazeera", "AlterNet",
-  "Associated Press", "Autostraddle", "BBC News", "BBC News World",
-  "CBC News World", "CNN World", "Democracy Now", "Fair Observer",
-  "Feministing", "Financial Times", "FSRN", "Gay Times", "Global Voices",
-  "HuffPost", "IPS News Agency", "Jezebel", "Jewish Voice for Peace",
-  "Le Monde", "Le Monde Diplomatique", "LGBTQ Nation", "Media Matters",
-  "Ms. Magazine", "New York Times", "NPR News", "Out Magazine", "PinkNews",
-  "Queerty", "Refinery29 Feminism", "Reveal News", "Reuters", "Reuters World",
-  "SBS News World", "The Conversation", "The Funambulist", "The Guardian",
-  "The Guardian Women", "The Independent", "The Progressive", "Them",
-  "Washington Post", "Xtra Magazine",
-];
 
 interface FilterBarProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
-  sources: string[];
+  localeSources: string[];  // locale-specific source list from SOURCES_BY_LOCALE
   articleCount: number;
+  totalCount: number;
   isFiltered: boolean;
   clearFilters: () => void;
+  locale: Locale;
+  t: Translations;
 }
 
 const FilterBar = ({
   filters,
   setFilters,
+  localeSources,
   articleCount,
   isFiltered,
   clearFilters,
+  t,
 }: FilterBarProps) => {
   const [searchInput, setSearchInput] = useState(filters.search);
   const [sourceOpen, setSourceOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const sourceRef = useRef<HTMLDivElement>(null);
+
+  // Sync searchInput when filters are cleared externally
+  useEffect(() => {
+    if (filters.search === "" && searchInput !== "") {
+      setSearchInput("");
+    }
+  }, [filters.search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Debounced search
   useEffect(() => {
@@ -89,9 +87,10 @@ const FilterBar = ({
     [setFilters]
   );
 
-  const toggleFreeOnly = useCallback(() => {
-    setFilters((f) => ({ ...f, freeOnly: !f.freeOnly }));
-  }, [setFilters]);
+  const setPaywall = useCallback(
+    (v: PaywallFilter) => setFilters((f) => ({ ...f, paywallFilter: v })),
+    [setFilters]
+  );
 
   const selectToday = useCallback(() => {
     setFilters((f) => ({
@@ -117,10 +116,19 @@ const FilterBar = ({
 
   const sourceLabel =
     filters.selectedSources.length === 0
-      ? "All Sources"
+      ? t.allSources
       : filters.selectedSources.length === 1
       ? filters.selectedSources[0]
-      : `${filters.selectedSources.length} sources`;
+      : `${filters.selectedSources.length} ${t.sources}`;
+
+  // Translate topic label for display; internal value stays in English for API
+  const getTopicDisplayLabel = (label: string) => t.topics[label] ?? label;
+
+  const paywallOptions: { value: PaywallFilter; label: string }[] = [
+    { value: "all",      label: t.paywallAll },
+    { value: "free",     label: t.paywallFree },
+    { value: "paywalled", label: t.paywallOnly },
+  ];
 
   return (
     <div className="sticky top-0 z-30 bg-card border-b border-border">
@@ -128,15 +136,15 @@ const FilterBar = ({
 
         {/* ROW A — Topics (horizontally scrollable) */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-          {TOPICS.map((t) => {
-            const isAll = t.label === "All Topics";
+          {TOPICS.map((topic) => {
+            const isAll = topic.label === "All Topics";
             const active = isAll
               ? filters.selectedTopics.length === 0
-              : filters.selectedTopics.includes(t.label);
+              : filters.selectedTopics.includes(topic.label);
             return (
               <button
-                key={t.label}
-                onClick={() => toggleTopic(t.label)}
+                key={topic.label}
+                onClick={() => toggleTopic(topic.label)}
                 className={`
                   flex-shrink-0 px-3 py-1.5 rounded-sm text-xs font-medium transition-colors
                   whitespace-nowrap select-none
@@ -145,7 +153,7 @@ const FilterBar = ({
                     : "bg-secondary text-secondary-foreground hover:bg-border"}
                 `}
               >
-                {t.emoji} {t.label}
+                {topic.emoji} {getTopicDisplayLabel(topic.label)}
               </button>
             );
           })}
@@ -162,7 +170,7 @@ const FilterBar = ({
                 : "bg-secondary text-secondary-foreground hover:bg-border"}
             `}
           >
-            Today
+            {t.today}
           </button>
           <span className="hidden sm:inline text-muted-foreground text-xs mx-1">📅</span>
           <input
@@ -172,7 +180,7 @@ const FilterBar = ({
             className="text-xs px-2 py-1.5 rounded-sm border border-border bg-card text-foreground w-full sm:w-auto"
             aria-label="Date from"
           />
-          <span className="text-xs text-muted-foreground">to</span>
+          <span className="text-xs text-muted-foreground">{t.dateTo}</span>
           <input
             type="date"
             value={filters.dateTo}
@@ -191,7 +199,7 @@ const FilterBar = ({
           )}
         </div>
 
-        {/* ROW C — Search + Multi-Source dropdown + Clear + Count */}
+        {/* ROW C — Search + Multi-Source dropdown + Paywall filter + Clear + Count */}
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
 
           {/* Search */}
@@ -204,7 +212,7 @@ const FilterBar = ({
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search headlines…"
+              placeholder={t.searchPlaceholder}
               className="w-full text-xs pl-8 pr-3 py-1.5 rounded-sm border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
@@ -229,43 +237,54 @@ const FilterBar = ({
                     onClick={clearSources}
                     className="w-full text-left px-3 py-2 text-xs text-primary hover:bg-secondary border-b border-border font-medium"
                   >
-                    Clear selection ({filters.selectedSources.length})
+                    {t.clearSelection} ({filters.selectedSources.length})
                   </button>
                 )}
-                {ALL_SOURCES.map((s) => {
-                  const checked = filters.selectedSources.includes(s);
-                  return (
-                    <label
-                      key={s}
-                      onClick={() => toggleSource(s)}
-                      className="flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-secondary cursor-pointer select-none"
-                    >
-                      <span className={`flex-shrink-0 w-3.5 h-3.5 border rounded-none flex items-center justify-center transition-colors ${checked ? "bg-chip-active border-chip-active" : "border-border bg-background"}`}>
-                        {checked && <Check size={9} className="text-chip-active-foreground" />}
-                      </span>
-                      <span className={checked ? "text-foreground font-medium" : "text-muted-foreground"}>
-                        {s}
-                      </span>
-                    </label>
-                  );
-                })}
+                {localeSources.length === 0 ? (
+                  <p className="px-3 py-4 text-xs text-muted-foreground italic">
+                    No sources yet for this locale.
+                  </p>
+                ) : (
+                  localeSources.map((s) => {
+                    const checked = filters.selectedSources.includes(s);
+                    return (
+                      <label
+                        key={s}
+                        onClick={() => toggleSource(s)}
+                        className="flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-secondary cursor-pointer select-none"
+                      >
+                        <span className={`flex-shrink-0 w-3.5 h-3.5 border rounded-none flex items-center justify-center transition-colors ${checked ? "bg-chip-active border-chip-active" : "border-border bg-background"}`}>
+                          {checked && <Check size={9} className="text-chip-active-foreground" />}
+                        </span>
+                        <span className={checked ? "text-foreground font-medium" : "text-muted-foreground"}>
+                          {s}
+                        </span>
+                      </label>
+                    );
+                  })
+                )}
               </div>
             )}
           </div>
 
-          {/* Free only toggle — sits right next to the source dropdown */}
-          <button
-            onClick={toggleFreeOnly}
-            className={`
-              flex-shrink-0 px-3 py-1.5 rounded-sm text-xs font-medium transition-colors whitespace-nowrap select-none
-              ${filters.freeOnly
-                ? "bg-chip-active text-chip-active-foreground"
-                : "bg-secondary text-secondary-foreground hover:bg-border"}
-            `}
-            title="Hide articles from paywalled sources (NYT, FT, Washington Post)"
-          >
-            🔓 Free only
-          </button>
+          {/* 3-state paywall filter */}
+          <div className="flex items-center rounded-sm border border-border overflow-hidden flex-shrink-0">
+            {paywallOptions.map((opt, i) => (
+              <button
+                key={opt.value}
+                onClick={() => setPaywall(opt.value)}
+                className={`
+                  px-2.5 py-1.5 text-xs font-medium transition-colors whitespace-nowrap select-none
+                  ${i > 0 ? "border-l border-border" : ""}
+                  ${filters.paywallFilter === opt.value
+                    ? "bg-chip-active text-chip-active-foreground"
+                    : "bg-card text-muted-foreground hover:bg-secondary hover:text-foreground"}
+                `}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
 
           {/* Clear all + count */}
           <div className="flex items-center gap-2 sm:ml-auto">
@@ -277,11 +296,11 @@ const FilterBar = ({
                 }}
                 className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
               >
-                Clear all
+                {t.clearAll}
               </button>
             )}
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {articleCount} article{articleCount !== 1 ? "s" : ""}
+              {articleCount} {articleCount !== 1 ? t.articles : t.article}
             </span>
           </div>
         </div>
