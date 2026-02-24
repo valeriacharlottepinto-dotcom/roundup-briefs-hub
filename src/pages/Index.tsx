@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Masthead from "@/components/Masthead";
 import FilterBar from "@/components/FilterBar";
 import ArticleGrid from "@/components/ArticleGrid";
@@ -27,12 +27,22 @@ const Index = ({ locale }: IndexProps) => {
     filters,
     setFilters,
     isFiltered,
+    isGrouped,
     clearFilters,
     page,
     setPage,
     totalPages,
     totalCount,
   } = useArticles(locale);
+
+  // "See all" in grouped sections → switch to filtered view for that topic
+  const handleTopicClick = useCallback(
+    (topic: string) => {
+      setFilters((f) => ({ ...f, selectedTopics: [topic] }));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [setFilters]
+  );
 
   const handleAboutToggle = () => {
     setShowAbout((v) => !v);
@@ -82,10 +92,12 @@ const Index = ({ locale }: IndexProps) => {
               loading={loading}
               error={error}
               isFiltered={isFiltered}
+              isGrouped={isGrouped}
               clearFilters={clearFilters}
               page={page}
               totalPages={totalPages}
               setPage={setPage}
+              onTopicClick={handleTopicClick}
               t={t}
             />
           </div>

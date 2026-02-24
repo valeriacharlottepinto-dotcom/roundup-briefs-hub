@@ -1,16 +1,21 @@
 import { type Article } from "@/lib/constants";
+import { TOPICS, TOPIC_COLORS } from "@/lib/constants";
 import { type Translations } from "@/lib/translations";
 import ArticleCard from "./ArticleCard";
+
+const SECTION_MAX = 6; // max articles per topic section in grouped view
 
 interface ArticleGridProps {
   articles: Article[];
   loading: boolean;
   error: string | null;
   isFiltered: boolean;
+  isGrouped: boolean;
   clearFilters: () => void;
   page: number;
   totalPages: number;
   setPage: (page: number) => void;
+  onTopicClick: (topic: string) => void;
   t: Translations;
 }
 
@@ -34,15 +39,117 @@ const SkeletonTile = () => (
   </div>
 );
 
+// ── Grouped (homepage) view ────────────────────────────────────────────────────
+
+interface GroupedViewProps {
+  articles: Article[];
+  onTopicClick: (topic: string) => void;
+  t: Translations;
+}
+
+const GroupedView = ({ articles, onTopicClick, t }: GroupedViewProps) => {
+  // Build a map: topicLabel → articles whose PRIMARY topic matches
+  // Primary topic = the first entry in the comma-separated `topics` string
+  const grouped: Record<string, Article[]> = {};
+
+  for (const article of articles) {
+    const primary = (article.topics ?? "")
+      .split(",")[0]
+      .trim();
+    if (!primary) continue;
+    if (!grouped[primary]) grouped[primary] = [];
+    grouped[primary].push(article);
+  }
+
+  // Also collect articles with no recognised topic
+  const uncategorised = articles.filter((a) => {
+    const primary = (a.topics ?? "").split(",")[0].trim();
+    return !primary;
+  });
+
+  // Render sections in TOPICS order (skip "All Topics" entry)
+  const topicDefs = TOPICS.filter((t) => t.label !== "All Topics");
+
+  const sections = topicDefs
+    .map((topic) => ({
+      label: topic.label,
+      emoji: topic.emoji,
+      articles: grouped[topic.label] ?? [],
+    }))
+    .filter((s) => s.articles.length > 0);
+
+  if (sections.length === 0 && uncategorised.length === 0) {
+    return null; // parent handles empty state
+  }
+
+  return (
+    <div className="space-y-10">
+      {sections.map(({ label, emoji, articles: sectionArticles }) => {
+        const colors = TOPIC_COLORS[label];
+        const preview = sectionArticles.slice(0, SECTION_MAX);
+        const hasMore = sectionArticles.length > SECTION_MAX;
+
+        return (
+          <section key={label}>
+            {/* Section header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-xs font-semibold px-2.5 py-1 rounded-sm"
+                  style={
+                    colors
+                      ? {
+                          backgroundColor: colors.bg,
+                          color: colors.text,
+                          border: `1px solid ${colors.border}`,
+                        }
+                      : {}
+                  }
+                >
+                  {emoji} {t.topics[label] ?? label}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {sectionArticles.length}{" "}
+                  {sectionArticles.length !== 1 ? t.articles : t.article}
+                </span>
+              </div>
+
+              {hasMore && (
+                <button
+                  onClick={() => onTopicClick(label)}
+                  className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
+                >
+                  {t.seeAll ?? "See all"} →
+                </button>
+              )}
+            </div>
+
+            {/* Article grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {preview.map((article) => (
+                <ArticleCard key={article.id} article={article} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+};
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
 const ArticleGrid = ({
   articles,
   loading,
   error,
   isFiltered,
+  isGrouped,
   clearFilters,
   page,
   totalPages,
   setPage,
+  onTopicClick,
   t,
 }: ArticleGridProps) => {
   if (loading) {
@@ -79,6 +186,16 @@ const ArticleGrid = ({
     );
   }
 
+  // ── Grouped view (no active filters) ─────────────────────────────────────────
+  if (isGrouped) {
+    return (
+      <div className="max-w-[1100px] mx-auto px-4">
+        <GroupedView articles={articles} onTopicClick={onTopicClick} t={t} />
+      </div>
+    );
+  }
+
+  // ── Flat paginated view (filters active) ──────────────────────────────────────
   return (
     <div className="max-w-[1100px] mx-auto px-4">
       <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

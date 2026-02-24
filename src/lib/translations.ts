@@ -26,6 +26,7 @@ export interface Translations {
   nextPage: string;
   pageOf: string;
   serverWaking: string;
+  seeAll: string;
   topics: Record<string, string>;
 }
 
@@ -56,6 +57,7 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     nextPage: "Next →",
     pageOf: "of",
     serverWaking: "Couldn't load articles. The server may be waking up — try refreshing.",
+    seeAll: "See all",
     topics: {
       "All Topics":            "All Topics",
       "Reproductive Rights":   "Reproductive Rights",
@@ -98,6 +100,7 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
     nextPage: "Weiter →",
     pageOf: "von",
     serverWaking: "Artikel konnten nicht geladen werden. Der Server startet möglicherweise — bitte neu laden.",
+    seeAll: "Alle anzeigen",
     topics: {
       "All Topics":            "Alle Themen",
       "Reproductive Rights":   "Reproduktive Rechte",

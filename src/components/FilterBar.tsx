@@ -300,7 +300,7 @@ const FilterBar = ({
               </button>
             )}
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {articleCount} {articleCount !== 1 ? t.articles : t.article}
+              {totalCount} {totalCount !== 1 ? t.articles : t.article}
             </span>
           </div>
         </div>

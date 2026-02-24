@@ -24,6 +24,7 @@ export const defaultFilters: Filters = {
 };
 
 export const PAGE_SIZE = 30;
+export const GROUPED_LIMIT = 120; // larger fetch for the grouped homepage view
 
 export function useArticles(locale: Locale) {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -52,10 +53,23 @@ export function useArticles(locale: Locale) {
       setLoading(true);
       setError(null);
       try {
+        // Determine if any real filters are active (same logic as isFiltered below)
+        const anyFilter =
+          filters.selectedTopics.length > 0 ||
+          filters.selectedSources.length > 0 ||
+          filters.timeRange !== null ||
+          filters.dateFrom !== "" ||
+          filters.dateTo !== "" ||
+          filters.search !== "" ||
+          filters.paywallFilter !== "all";
+
+        const effectiveLimit = anyFilter ? PAGE_SIZE : GROUPED_LIMIT;
+        const effectiveOffset = anyFilter ? (page - 1) * PAGE_SIZE : 0;
+
         const params = new URLSearchParams();
         params.set("locale", locale);
-        params.set("limit", String(PAGE_SIZE));
-        params.set("offset", String((page - 1) * PAGE_SIZE));
+        params.set("limit", String(effectiveLimit));
+        params.set("offset", String(effectiveOffset));
 
         if (filters.selectedTopics.length > 0) {
           params.set("topics", filters.selectedTopics.join(","));
@@ -146,6 +160,7 @@ export function useArticles(locale: Locale) {
     filters,
     setFilters,
     isFiltered,
+    isGrouped: !isFiltered, // true when no filters active → grouped homepage view
     clearFilters,
     page,
     setPage,
