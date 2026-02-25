@@ -147,6 +147,17 @@ export function useArticles(locale: Locale) {
     );
   }, [filters]);
 
+  // Grouped view stays active for date-only filtering — dates are a temporal
+  // scope, not a content focus. Only topic/source/search/paywall switches to flat.
+  const isGrouped = useMemo(() => {
+    return (
+      filters.selectedTopics.length === 0 &&
+      filters.selectedSources.length === 0 &&
+      filters.search === "" &&
+      filters.paywallFilter === "all"
+    );
+  }, [filters]);
+
   const clearFilters = useCallback(() => {
     setFiltersState(defaultFilters);
     setPageState(1);
@@ -160,7 +171,7 @@ export function useArticles(locale: Locale) {
     filters,
     setFilters,
     isFiltered,
-    isGrouped: !isFiltered, // true when no filters active → grouped homepage view
+    isGrouped,
     clearFilters,
     page,
     setPage,
