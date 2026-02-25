@@ -86,10 +86,19 @@ export const EN_SOURCES: string[] = [
   "Washington Post", "Xtra Magazine",
 ];
 
-// German sources — to be populated when DE locale is launched.
-// Add RSS feed details in scraper.py SOURCE_REGISTRY["de"] at the same time.
+// German sources — keyword-filtered unless marked specialist
 export const DE_SOURCES: string[] = [
-  // e.g. "taz", "emma.de", "Spiegel Online", "LSVD", "Queer.de"
+  // General / quality news (keyword-filtered)
+  "tagesschau.de", "Der Spiegel", "Die Zeit", "Süddeutsche Zeitung",
+  "taz", "Deutsche Welle Deutsch", "Deutschlandfunk",
+  // Investigative / progressive (all articles included)
+  "CORRECTIV", "netzpolitik.org",
+  // DACH expansion (keyword-filtered)
+  "Der Standard", "ORF.at",
+  // LGBTQIA+ specialist (all articles included)
+  "queer.de",
+  // Feminist specialist (all articles included)
+  "Missy Magazine",
 ];
 
 export const SOURCES_BY_LOCALE: Record<Locale, string[]> = {
