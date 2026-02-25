@@ -2,7 +2,9 @@ import { type Stats, type Locale } from "@/lib/constants";
 import { type Translations } from "@/lib/translations";
 import { format } from "date-fns";
 import ThemeToggle from "./ThemeToggle";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { Bookmark } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MastheadProps {
   stats: Stats | null;
@@ -14,6 +16,8 @@ interface MastheadProps {
 
 const Masthead = ({ stats, showAbout, onAboutToggle, locale, t }: MastheadProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   const lastScraped = stats?.last_scraped
     ? format(new Date(stats.last_scraped), "d MMM yyyy, HH:mm")
     : null;
@@ -44,6 +48,20 @@ const Masthead = ({ stats, showAbout, onAboutToggle, locale, t }: MastheadProps)
             >
               {showAbout ? t.back : t.about}
             </button>
+
+            {/* Saved link — always visible; filled icon when signed in */}
+            <Link
+              to={`/${locale}/saved`}
+              aria-label="Saved articles"
+              title="Saved articles"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Bookmark
+                className="w-4 h-4"
+                fill={user ? "currentColor" : "none"}
+                strokeWidth={1.5}
+              />
+            </Link>
 
             {/* Locale toggle */}
             <div className="flex items-center gap-1 text-xs font-sans">

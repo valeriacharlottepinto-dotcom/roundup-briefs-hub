@@ -105,3 +105,17 @@ export const SOURCES_BY_LOCALE: Record<Locale, string[]> = {
   en: EN_SOURCES,
   de: DE_SOURCES,
 };
+
+// ── Topic slug ↔ label map ───────────────────────────────────────────────────
+// Slugs are the stable DB identifiers. Labels are locale-specific display text.
+export const TOPIC_SLUGS: Record<string, { en: string; de: string; emoji: string }> = {
+  backlash:         { en: "Anti-Rights & Backlash Movements",       de: "Anti-Rechte & Backlash-Bewegungen",         emoji: "🔥" },
+  bodily_autonomy:  { en: "Bodily Autonomy & Reproductive Justice", de: "Körperliche Selbstbestimmung",               emoji: "🧬" },
+  violence:         { en: "Violence, Safety & Criminal Justice",    de: "Gewalt, Sicherheit & Strafrecht",            emoji: "🛡️" },
+  state_power:      { en: "State Power, Law & Governance",          de: "Staatsmacht, Recht & Politik",               emoji: "🏛️" },
+  economic_justice: { en: "Economic & Labour Justice",              de: "Wirtschafts- & Arbeitsgerechtigkeit",        emoji: "💰" },
+  migration:        { en: "Migration, Borders & Citizenship",       de: "Migration, Grenzen & Staatsbürgerschaft",    emoji: "🌍" },
+  climate:          { en: "Climate & Environmental Justice",        de: "Klima- & Umweltgerechtigkeit",               emoji: "🌱" },
+  technology:       { en: "Technology & Digital Power",             de: "Technologie & digitale Macht",               emoji: "💻" },
+  culture:          { en: "Culture, Media & Narrative Power",       de: "Kultur, Medien & Narrative Macht",           emoji: "🎭" },
+};

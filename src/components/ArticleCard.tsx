@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { type Article, getSourceBorderColor } from "@/lib/constants";
+import BookmarkButton from "@/components/BookmarkButton";
 
 interface ArticleCardProps {
   article: Article;
@@ -76,6 +77,8 @@ const ArticleCard = ({ article }: ArticleCardProps) => {
             <span className="text-[0.7rem] text-muted-foreground whitespace-nowrap">
               {dateStr}
             </span>
+            {/* Bookmark — stops propagation so the card link doesn't fire */}
+            <BookmarkButton article={article} />
           </div>
         </div>
 
