@@ -1,64 +1,110 @@
-const KEYWORDS_TIER1 = {
-  "Women & Feminism": [
+import { TOPICS, TOPIC_COLORS } from "@/lib/constants";
+
+// ── Inclusion gate keywords (displayed on about page) ─────────────────────────
+
+const GATE_A_KEYWORDS = {
+  "Women & gender": [
     "feminist", "feminism", "women's rights", "gender pay gap", "equal pay",
-    "pay equity", "wage gap", "pay disparity", "reproductive rights", "abortion",
-    "pro-choice", "planned parenthood", "maternal health", "maternal mortality",
+    "reproductive rights", "abortion", "maternal health", "maternal mortality",
     "gynecolog", "obstetric", "sexism", "misogyny", "patriarchy", "period poverty",
-    "menstrual", "menstruation", "women's health", "domestic violence",
-    "gender violence", "gender-based violence", "sexual harassment", "sexual assault",
-    "rape", "metoo", "me too", "#metoo", "femicide", "honour killing", "honor killing",
-    "female genital mutilation", "fgm", "child marriage", "forced marriage",
-    "women in leadership", "women in sport", "women in politics", "glass ceiling",
-    "motherhood penalty", "parental leave", "maternity leave", "surrogacy",
-    "reproductive justice", "bodily autonomy", "sex trafficking", "human trafficking",
-    "body image", "eating disorder", "diet culture", "birth control", "contraception",
-    "ivf", "fertility", "breastfeeding", "postpartum", "prenatal", "postnatal",
-    "intersectional feminism", "ecofeminism", "women's march", "women's movement",
+    "menstrual", "domestic violence", "gender-based violence", "sexual harassment",
+    "sexual assault", "rape", "femicide", "honour killing", "fgm",
+    "female genital mutilation", "forced marriage", "bodily autonomy",
+    "surrogacy", "reproductive justice",
   ],
   "LGBTQIA+": [
-    "lgbtq", "lgbtqia", "lesbian", "bisexual", "transgender", "nonbinary",
-    "non-binary", "intersex", "asexual", "pansexual", "aromantic", "agender",
-    "genderfluid", "pride parade", "same-sex", "gay marriage", "gay rights",
-    "trans rights", "queer rights", "marriage equality", "homophobia", "transphobia",
-    "biphobia", "queerphobia", "conversion therapy", "reparative therapy",
-    "gender affirming", "gender affirming care", "puberty blocker", "gender identity",
-    "gender expression", "gender dysphoria", "pronouns", "deadnaming", "misgendering",
-    "two-spirit", "hijra", "third gender", "drag queen", "drag king",
-    "section 28", "don't say gay", "bathroom bill", "lgbtq youth", "queer community",
+    "lgbtq", "lgbtqia", "queer", "gay", "lesbian", "bisexual", "transgender",
+    "nonbinary", "non-binary", "intersex", "asexual", "pansexual", "pride",
+    "same-sex", "gay rights", "trans rights", "marriage equality", "homophobia",
+    "transphobia", "biphobia", "conversion therapy", "gender affirming",
+    "gender identity", "pronouns", "deadnaming", "two-spirit",
   ],
-  "Immigration & Asylum": [
-    "asylum seeker", "undocumented", "unauthorized", "deportation", "deported",
-    "border wall", "naturalization", "stateless", "detention center", "ice raid",
-    "displacement", "displaced persons", "daca", "dreamers", "sanctuary",
-    "resettlement", "xenophobia", "nativism", "anti-immigrant", "smuggling",
+  "Migration & displacement": [
+    "refugee", "asylum", "asylum seeker", "migrant", "migration", "deportation",
+    "undocumented", "detention", "displacement", "diaspora", "stateless",
+    "forced displacement",
   ],
-  "Human Rights": [
-    "human rights", "civil rights", "civil liberties", "minority rights",
-    "indigenous rights", "indigenous peoples", "racial justice", "racism",
-    "anti-racism", "systemic racism", "genocide", "ethnic cleansing", "war crimes",
-    "crimes against humanity", "apartheid", "reparations", "political prisoner",
-    "prisoner of conscience", "disability rights", "ableism", "un human rights",
-    "press freedom", "humanitarian crisis", "humanitarian aid",
+  "Rights & justice": [
+    "human rights", "civil rights", "civil liberties", "discrimination",
+    "minority rights", "indigenous", "racial justice", "racism",
   ],
 };
 
-const KEYWORDS_TIER2 = [
-  "equality", "equity", "injustice", "protest", "activist", "activism",
-  "advocacy", "discrimination", "prejudice", "bigotry", "oppression",
-  "persecution", "humanitarian", "accountability", "health", "healthcare",
-  "medical", "sport", "athlete", "olympic", "economy", "economic", "financial",
-  "election", "parliament", "congress", "government", "policy", "violence",
-  "assault", "abuse", "crime", "poverty", "welfare", "housing", "education",
-  "school", "university", "culture", "film", "music", "art", "workplace",
-  "employment", "career", "business",
+const GATE_B_KEYWORDS = [
+  "bodily autonomy", "fgm", "forced sterilisation", "obstetric violence",
+  "care economy", "unpaid care", "domestic workers", "garment workers",
+  "labour rights", "pay equity",
+  "land dispossession", "climate displacement", "environmental racism",
+  "climate justice", "indigenous land",
+  "surveillance", "facial recognition", "algorithmic discrimination",
+  "internet shutdown", "digital rights", "spyware", "deepfake",
+  "gender ideology", "anti-trans", "book ban", "don't say gay", "bathroom bill",
+  "trafficking", "forced marriage", "extrajudicial killing", "impunity",
+  "press freedom", "journalist arrested", "academic freedom",
 ];
 
-const IDENTITY_CONTEXT = [
-  "women", "woman", "girl", "girls", "female", "feminist", "feminism", "gender",
-  "queer", "gay", "lesbian", "bisexual", "transgender", "trans", "lgbtq", "lgbt",
-  "pride", "refugee", "asylum", "immigrant", "migrant", "indigenous", "aboriginal",
-  "marginalised", "marginalized", "racial", "racism", "disability", "disabled",
-  "minority",
+// ── System category keywords (curated for display) ────────────────────────────
+
+const SYSTEM_KEYWORDS: Record<string, string[]> = {
+  "Anti-Rights & Backlash Movements": [
+    "gender ideology", "traditional values", "anti-trans", "book ban",
+    "don't say gay", "bathroom bill", "conversion therapy",
+    "parents rights", "religious freedom exemption", "rights rollback",
+    "far-right", "backlash", "anti-lgbtq", "culture war",
+  ],
+  "Bodily Autonomy & Reproductive Justice": [
+    "abortion", "reproductive rights", "bodily autonomy", "contraception",
+    "maternal mortality", "fgm", "female genital mutilation",
+    "forced sterilisation", "obstetric violence", "period poverty",
+    "gender affirming care", "puberty blocker", "surrogacy",
+  ],
+  "Violence, Safety & Criminal Justice": [
+    "femicide", "domestic violence", "gender-based violence", "sexual assault",
+    "rape", "honour killing", "forced marriage", "trafficking",
+    "police brutality", "extrajudicial killing", "forced disappearance",
+    "torture", "hate crime", "impunity",
+  ],
+  "State Power, Law & Governance": [
+    "supreme court", "constitutional court", "landmark ruling",
+    "criminalised", "decriminalised", "legislation", "signed into law",
+    "anti-discrimination law", "equality act", "treaty", "un resolution",
+    "election", "parliament",
+  ],
+  "Economic & Labour Justice": [
+    "gender pay gap", "pay equity", "care economy", "unpaid care",
+    "domestic workers", "garment workers", "labour rights", "union",
+    "maternity leave", "pension", "motherhood penalty", "glass ceiling",
+    "poverty", "food insecurity", "land rights",
+  ],
+  "Migration, Borders & Citizenship": [
+    "refugee", "asylum seeker", "stateless", "deportation",
+    "detention centre", "border violence", "forced return",
+    "xenophobia", "kafala", "rohingya", "mediterranean crossing",
+  ],
+  "Climate & Environmental Justice": [
+    "climate displacement", "land dispossession", "indigenous land",
+    "environmental racism", "sacrifice zone", "climate justice",
+    "deforestation", "dam construction", "water rights",
+    "loss and damage", "just transition",
+  ],
+  "Technology & Digital Power": [
+    "facial recognition", "mass surveillance", "spyware", "pegasus",
+    "internet shutdown", "content moderation", "algorithmic discrimination",
+    "deepfake", "non-consensual imagery", "digital rights",
+    "data privacy", "biometric", "predictive policing",
+  ],
+  "Culture, Media & Narrative Power": [
+    "press freedom", "journalist arrested", "book ban",
+    "academic freedom", "representation", "indigenous media",
+    "language rights", "censorship", "drag",
+  ],
+};
+
+const IDENTITY_TAGS = [
+  "Women / Girls", "LGBTQIA+", "Indigenous peoples",
+  "Migrants & refugees", "People with disabilities",
+  "Racialised minorities", "Religious minorities",
+  "Children & youth", "Incarcerated people", "Sex workers",
 ];
 
 const SOURCES = {
@@ -84,20 +130,7 @@ const SOURCES = {
   ],
 };
 
-const TOPICS_LIST = [
-  { emoji: "🩺", label: "Reproductive Rights", note: "" },
-  { emoji: "💰", label: "Gender Pay Gap", note: "" },
-  { emoji: "🏳️‍🌈", label: "LGBTQIA+", note: "" },
-  { emoji: "🌍", label: "Immigration", note: "" },
-  { emoji: "⚖️", label: "Human Rights", note: "" },
-  { emoji: "🛡️", label: "Violence & Safety", note: "" },
-  { emoji: "🏥", label: "Health & Medicine", note: "2+ signals required" },
-  { emoji: "📜", label: "Law & Policy", note: "2+ signals required" },
-  { emoji: "🏛️", label: "Politics & Government", note: "2+ signals required" },
-  { emoji: "🎭", label: "Culture & Media", note: "2+ signals required" },
-  { emoji: "⚽", label: "Sports", note: "2+ signals required" },
-  { emoji: "💼", label: "Workplace & Economics", note: "2+ signals required" },
-];
+// ── Components ────────────────────────────────────────────────────────────────
 
 const SectionHeading = ({ children }: { children: React.ReactNode }) => (
   <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground border-b border-border pb-2 mb-4 mt-10 font-sans">
@@ -106,17 +139,24 @@ const SectionHeading = ({ children }: { children: React.ReactNode }) => (
 );
 
 const AboutPage = () => {
+  const systemTopics = TOPICS.filter((t) => t.label !== "All Topics");
+
   return (
     <main className="max-w-[700px] mx-auto px-4 py-8 font-sans">
 
       {/* Intro */}
-      <p className="text-[0.95rem] text-foreground leading-relaxed">
+      <p className="text-[0.95rem] text-foreground leading-relaxed mb-4">
         <strong>shared ground</strong> is an independent news reader aggregating
-        feminist, women's, and LGBTQIA+ news from around the world. Articles are
-        scraped from RSS feeds every 12 hours. Only publicly accessible articles
-        are included — sources marked 🔒 are paywalled and can be filtered out
-        using the <em>Free only</em> toggle. Articles older than 6 months are
-        automatically removed to keep the database lean.
+        feminist, LGBTQIA+, and global rights news from around the world.
+        Articles are scraped from RSS feeds every 12 hours and organised by
+        systems of power — not isolated issue buckets. The goal is to surface
+        structural trends, not just incidents: to help readers monitor the state
+        of people's rights globally, across regions and contexts.
+      </p>
+      <p className="text-[0.9rem] text-muted-foreground leading-relaxed">
+        Only publicly accessible articles are included — sources marked 🔒 are
+        paywalled and can be filtered out. Articles older than 6 months are
+        automatically removed.
       </p>
 
       {/* Sources */}
@@ -134,41 +174,107 @@ const AboutPage = () => {
 
       {/* How articles are selected */}
       <SectionHeading>How articles are selected</SectionHeading>
-      <p className="text-[0.9rem] text-muted-foreground leading-relaxed mb-4">
-        Specialist publications (Women &amp; Feminist, LGBTQIA+) include all their
-        articles. For all other sources, a two-tier keyword system decides what gets in:
+      <p className="text-[0.9rem] text-muted-foreground leading-relaxed mb-5">
+        Specialist publications (Women &amp; Feminist, LGBTQIA+) include all
+        their articles. For all other sources, an article must pass at least one
+        of three inclusion gates:
       </p>
 
-      <div className="mb-6 space-y-4">
+      <div className="space-y-3 mb-6">
         <div className="border border-border rounded-sm p-4 bg-secondary/40">
-          <p className="text-xs font-semibold uppercase tracking-wider text-foreground mb-2">
-            Tier 1 — always included
+          <p className="text-xs font-semibold uppercase tracking-wider text-foreground mb-1.5">
+            Gate A — Direct identity signal
           </p>
           <p className="text-[0.85rem] text-muted-foreground leading-relaxed">
-            Articles containing any of these specific terms are always included,
-            regardless of context.
+            Article contains an explicit identity keyword <em>and</em> describes
+            a rights-affecting context — a legal decision, policy change,
+            documented harm, or organised resistance. A celebrity profile that
+            mentions someone's gender does not pass this gate; a court ruling on
+            bodily autonomy does.
           </p>
         </div>
         <div className="border border-border rounded-sm p-4 bg-secondary/40">
-          <p className="text-xs font-semibold uppercase tracking-wider text-foreground mb-2">
-            Tier 2 — included only with identity context
+          <p className="text-xs font-semibold uppercase tracking-wider text-foreground mb-1.5">
+            Gate B — Structural system signal
           </p>
           <p className="text-[0.85rem] text-muted-foreground leading-relaxed">
-            Broader terms like <em>health</em>, <em>sport</em>, <em>economy</em>,
-            or <em>election</em> only trigger inclusion when an identity keyword
-            is also present — e.g. <em>women</em>, <em>transgender</em>,{" "}
-            <em>refugee</em>, <em>indigenous</em>, <em>lgbtq</em>. This prevents
-            general sports or finance articles from appearing unless they relate
-            to a marginalised group.
+            Article describes a structural issue within one of the 9 system
+            categories without requiring an explicit identity mention. Terms like{" "}
+            <em>care economy</em>, <em>land dispossession</em>,{" "}
+            <em>internet shutdown</em>, or <em>algorithmic discrimination</em>{" "}
+            trigger inclusion on their own — the system itself implies rights
+            relevance. This gate catches the stories the old model missed:
+            garment workers, forced displacement, surveillance of activists.
+          </p>
+        </div>
+        <div className="border border-border rounded-sm p-4 bg-secondary/40">
+          <p className="text-xs font-semibold uppercase tracking-wider text-foreground mb-1.5">
+            Gate C — Institutional signal
+          </p>
+          <p className="text-[0.85rem] text-muted-foreground leading-relaxed">
+            Article directly involves a rights institution, treaty body, or
+            named rights organisation — UN Special Rapporteurs, Amnesty
+            International, Human Rights Watch, or regional equivalents.
           </p>
         </div>
       </div>
 
+      {/* Gate A keywords */}
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3 mt-6">
-        Tier 1 keywords by category
+        Gate A keywords by group
       </p>
-      {Object.entries(KEYWORDS_TIER1).map(([category, words]) => (
-        <div key={category} className="mb-5">
+      {Object.entries(GATE_A_KEYWORDS).map(([group, words]) => (
+        <div key={group} className="mb-4">
+          <p className="text-xs font-medium text-muted-foreground mb-1">{group}</p>
+          <p className="text-[0.8rem] text-muted-foreground leading-relaxed">
+            {words.join(", ")}
+          </p>
+        </div>
+      ))}
+
+      {/* Gate B keywords */}
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2 mt-6">
+        Gate B structural keywords (no identity mention required)
+      </p>
+      <p className="text-[0.8rem] text-muted-foreground leading-relaxed">
+        {GATE_B_KEYWORDS.join(", ")}
+      </p>
+
+      {/* System categories */}
+      <SectionHeading>System categories</SectionHeading>
+      <p className="text-[0.9rem] text-muted-foreground leading-relaxed mb-5">
+        Articles are tagged with 1–3 primary system categories based on the
+        strongest structural signals present. Categories reflect systems of power,
+        not isolated issues — an article about a pension cut that disproportionately
+        affects women belongs in{" "}
+        <strong>Economic &amp; Labour Justice</strong>, not a generic gender
+        bucket.
+      </p>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+        {systemTopics.map((topic) => {
+          const colors = TOPIC_COLORS[topic.label];
+          return (
+            <span
+              key={topic.label}
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-sm"
+              style={colors
+                ? { backgroundColor: colors.bg, color: colors.text, border: `1px solid ${colors.border}` }
+                : { border: "1px solid var(--border)" }
+              }
+            >
+              {topic.emoji} {topic.label}
+            </span>
+          );
+        })}
+      </div>
+
+      {/* System keywords */}
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
+        Category keywords
+      </p>
+      {Object.entries(SYSTEM_KEYWORDS).map(([category, words]) => (
+        <div key={category} className="mb-4">
           <p className="text-xs font-medium text-muted-foreground mb-1">{category}</p>
           <p className="text-[0.8rem] text-muted-foreground leading-relaxed">
             {words.join(", ")}
@@ -176,48 +282,44 @@ const AboutPage = () => {
         </div>
       ))}
 
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2 mt-6">
-        Tier 2 keywords (require identity context)
-      </p>
-      <p className="text-[0.8rem] text-muted-foreground leading-relaxed mb-4">
-        {KEYWORDS_TIER2.join(", ")}
-      </p>
-
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2 mt-4">
-        Identity context keywords
-      </p>
-      <p className="text-[0.8rem] text-muted-foreground leading-relaxed">
-        {IDENTITY_CONTEXT.join(", ")}
-      </p>
-
-      {/* Topics */}
-      <SectionHeading>Topics</SectionHeading>
+      {/* Identity tags */}
+      <SectionHeading>Identity tags</SectionHeading>
       <p className="text-[0.9rem] text-muted-foreground leading-relaxed mb-4">
-        Articles are automatically tagged with topics based on keyword matching.
-        Specific topics trigger on a single keyword match. Broad topics (marked
-        below) require at least 2 matching signals to avoid miscategorisation —
-        for example, an article about a medical professional involved in a scandal
-        will not be tagged Health &amp; Medicine unless the article is substantively
-        about health.
+        Separately from system categories, articles are tagged with the affected
+        groups they describe. Identity tags are <em>not</em> topic categories —
+        they answer "who is this about", not "what system is at work". The same
+        article can carry a system tag of{" "}
+        <strong>Violence, Safety &amp; Criminal Justice</strong> and an identity
+        tag of <strong>LGBTQIA+</strong>.
       </p>
       <div className="flex flex-wrap gap-2">
-        {TOPICS_LIST.map((t) => (
+        {IDENTITY_TAGS.map((tag) => (
           <span
-            key={t.label}
-            className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium border border-border bg-secondary text-foreground rounded-sm"
+            key={tag}
+            className="inline-flex items-center px-3 py-1 text-xs font-medium border border-border bg-secondary text-muted-foreground rounded-sm"
           >
-            {t.emoji} {t.label}
-            {t.note && (
-              <span className="text-muted-foreground font-normal">· {t.note}</span>
-            )}
+            {tag}
           </span>
         ))}
       </div>
+
+      {/* Anti-rights note */}
+      <SectionHeading>A note on Anti-Rights &amp; Backlash</SectionHeading>
+      <p className="text-[0.9rem] text-muted-foreground leading-relaxed">
+        The <strong>🔥 Anti-Rights &amp; Backlash Movements</strong> category
+        tracks organised efforts to roll back existing rights protections or
+        suppress minority groups. It is applied when an article describes a
+        named political movement, legislative campaign, or coordinated campaign
+        explicitly targeting minority rights — not general conservative
+        governance or ordinary partisan disagreement. The same standard applies
+        regardless of geography or political tradition.
+      </p>
 
       {/* Footer note */}
       <p className="mt-12 text-xs text-muted-foreground border-t border-border pt-4">
         shared ground · Scrapes every 12 hours · Articles kept for 6 months · Built for independent readers
       </p>
+
     </main>
   );
 };
