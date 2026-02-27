@@ -19,7 +19,7 @@ const ImprintPage = ({ onClose }: ImprintPageProps) => {
       </p>
 
       <p className="text-[0.9rem] text-foreground leading-relaxed mb-6">
-        Valeria Pinto<br />
+        Valeria Pinto & Alexandra Brandl<br />
         F4<br />
         68159 Mannheim<br />
         Germany
@@ -39,7 +39,7 @@ const ImprintPage = ({ onClose }: ImprintPageProps) => {
         Responsible for content pursuant to § 18 Abs. 2 MStV
       </p>
       <p className="text-[0.9rem] text-foreground leading-relaxed mb-6">
-        Valeria Pinto<br />
+        Valeria Pinto & Alexandra Brandl<br />
         F4, 68159 Mannheim
       </p>
 
