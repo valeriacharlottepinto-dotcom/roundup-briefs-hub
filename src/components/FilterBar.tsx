@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { TOPICS, type Locale } from "@/lib/constants";
+import { TOPICS, TOPIC_SLUGS, type Locale } from "@/lib/constants";
 import { type Filters, type PaywallFilter } from "@/hooks/useArticles";
 import { type Translations } from "@/lib/translations";
-import { Search, X, ChevronDown, Check } from "lucide-react";
+import { Search, X, ChevronDown, Check, Heart } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useFollowedTopics } from "@/hooks/useFollowedTopics";
+
+// Build a reverse map: English label → slug
+const LABEL_TO_SLUG: Record<string, string> = Object.fromEntries(
+  Object.entries(TOPIC_SLUGS).map(([slug, info]) => [info.en, slug])
+);
 
 interface FilterBarProps {
   filters: Filters;
@@ -26,6 +33,8 @@ const FilterBar = ({
   clearFilters,
   t,
 }: FilterBarProps) => {
+  const { user } = useAuth();
+  const { isFollowing, followTopic, unfollowTopic } = useFollowedTopics();
   const [searchInput, setSearchInput] = useState(filters.search);
   const [sourceOpen, setSourceOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -142,20 +151,46 @@ const FilterBar = ({
             const active = isAll
               ? filters.selectedTopics.length === 0
               : filters.selectedTopics.includes(topic.label);
+            const slug = LABEL_TO_SLUG[topic.label];
+            const followed = !isAll && user && slug ? isFollowing(slug) : false;
             return (
-              <button
-                key={topic.label}
-                onClick={() => toggleTopic(topic.label)}
-                className={`
-                  flex-shrink-0 px-3 py-1.5 rounded-sm text-xs font-medium transition-colors
-                  whitespace-nowrap select-none
-                  ${active
-                    ? "bg-chip-active text-chip-active-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-border"}
-                `}
-              >
-                {topic.emoji} {getTopicDisplayLabel(topic.label)}
-              </button>
+              <div key={topic.label} className="flex-shrink-0 flex items-center">
+                <button
+                  onClick={() => toggleTopic(topic.label)}
+                  className={`
+                    px-3 py-1.5 rounded-sm text-xs font-medium transition-colors
+                    whitespace-nowrap select-none
+                    ${active
+                      ? "bg-chip-active text-chip-active-foreground"
+                      : "bg-secondary text-secondary-foreground hover:bg-border"}
+                    ${!isAll && user ? "rounded-r-none pr-2" : ""}
+                  `}
+                >
+                  {topic.emoji} {getTopicDisplayLabel(topic.label)}
+                </button>
+                {!isAll && user && slug && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      followed ? unfollowTopic(slug) : followTopic(slug);
+                    }}
+                    aria-label={followed ? "Unfollow topic" : "Follow topic"}
+                    title={followed ? "Unfollow topic" : "Follow topic"}
+                    className={`
+                      px-1.5 py-1.5 rounded-r-sm border-l text-xs transition-colors select-none
+                      ${active
+                        ? "bg-chip-active border-chip-active-foreground/20 text-chip-active-foreground hover:bg-chip-active/80"
+                        : "bg-secondary border-border text-muted-foreground hover:bg-border"}
+                    `}
+                  >
+                    <Heart
+                      className="w-3 h-3"
+                      fill={followed ? "currentColor" : "none"}
+                      strokeWidth={1.5}
+                    />
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>

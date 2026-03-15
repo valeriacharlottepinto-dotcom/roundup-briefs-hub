@@ -3,7 +3,7 @@ import { type Translations } from "@/lib/translations";
 import { format } from "date-fns";
 import ThemeToggle from "./ThemeToggle";
 import { useNavigate, Link } from "react-router-dom";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Mail, UserCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface MastheadProps {
@@ -12,9 +12,10 @@ interface MastheadProps {
   onAboutToggle: () => void;
   locale: Locale;
   t: Translations;
+  onNewsletterClick: () => void;
 }
 
-const Masthead = ({ stats, showAbout, onAboutToggle, locale, t }: MastheadProps) => {
+const Masthead = ({ stats, showAbout, onAboutToggle, locale, t, onNewsletterClick }: MastheadProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -49,6 +50,16 @@ const Masthead = ({ stats, showAbout, onAboutToggle, locale, t }: MastheadProps)
               {showAbout ? t.back : t.about}
             </button>
 
+            {/* Newsletter button */}
+            <button
+              onClick={onNewsletterClick}
+              aria-label={t.getNewsletter}
+              title={t.getNewsletter}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Mail className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+
             {/* Saved link — always visible; filled icon when signed in */}
             <Link
               to={`/${locale}/saved`}
@@ -62,6 +73,18 @@ const Masthead = ({ stats, showAbout, onAboutToggle, locale, t }: MastheadProps)
                 strokeWidth={1.5}
               />
             </Link>
+
+            {/* Profile icon — only when signed in */}
+            {user && (
+              <Link
+                to={`/${locale}/profile`}
+                aria-label={t.profile}
+                title={t.profile}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <UserCircle className="w-4 h-4" strokeWidth={1.5} />
+              </Link>
+            )}
 
             {/* Locale toggle */}
             <div className="flex items-center gap-1 text-xs font-sans">

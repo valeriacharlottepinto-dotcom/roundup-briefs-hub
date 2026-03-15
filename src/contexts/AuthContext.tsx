@@ -8,6 +8,7 @@ import {
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import AuthModal from "@/components/AuthModal";
+import OnboardingModal from "@/components/OnboardingModal";
 
 // ─── Context shape ────────────────────────────────────────────────────────────
 interface AuthContextValue {
@@ -21,6 +22,9 @@ interface AuthContextValue {
    * - If not, the AuthModal opens and callback runs after successful sign-in.
    */
   requireAuth: (onSuccess: () => void) => void;
+  /** Current UI locale, used by OnboardingModal */
+  locale: "en" | "de";
+  setLocale: (l: "en" | "de") => void;
 }
 
 export const AuthContext = createContext<AuthContextValue>({
@@ -29,6 +33,8 @@ export const AuthContext = createContext<AuthContextValue>({
   loading: true,
   signOut: async () => {},
   requireAuth: () => {},
+  locale: "en",
+  setLocale: () => {},
 });
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -37,6 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [locale, setLocale] = useState<"en" | "de">("en");
 
   // Stores a callback to run after the user successfully signs in
   const pendingAction = useRef<(() => void) | null>(null);
@@ -52,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth state changes (sign-in, sign-out, token refresh)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -62,6 +70,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         pendingAction.current();
         pendingAction.current = null;
         setModalOpen(false);
+      }
+
+      // On first sign-in, check if user has topic preferences
+      if (event === "SIGNED_IN" && session) {
+        supabase
+          .from("user_topic_preferences")
+          .select("user_id")
+          .eq("user_id", session.user.id)
+          .maybeSingle()
+          .then(({ data }) => {
+            if (!data) {
+              setShowOnboarding(true);
+            }
+          });
       }
     });
 
@@ -82,9 +104,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut, requireAuth }}>
+    <AuthContext.Provider value={{ user, session, loading, signOut, requireAuth, locale, setLocale }}>
       {children}
       <AuthModal open={modalOpen} onOpenChange={setModalOpen} />
+      <OnboardingModal
+        open={showOnboarding}
+        onDismiss={() => setShowOnboarding(false)}
+        locale={locale}
+      />
     </AuthContext.Provider>
   );
 }
