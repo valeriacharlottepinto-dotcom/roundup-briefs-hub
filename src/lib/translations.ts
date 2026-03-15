@@ -28,6 +28,26 @@ export interface Translations {
   serverWaking: string;
   seeAll: string;
   topics: Record<string, string>;
+  // Newsletter + profile
+  newsletter: string;
+  getNewsletter: string;
+  subscribeSuccess: string;
+  chooseTopics: string;
+  chooseLanguage: string;
+  profile: string;
+  followedTopics: string;
+  noFollowedTopics: string;
+  editPreferences: string;
+  signOut: string;
+  languageEnOnly: string;
+  languageDeOnly: string;
+  languageBoth: string;
+  subscribeButton: string;
+  skipForNow: string;
+  savePreferences: string;
+  newsletterIntro: string;
+  onboardingTitle: string;
+  onboardingIntro: string;
 }
 
 export const TRANSLATIONS: Record<Locale, Translations> = {
@@ -70,6 +90,25 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
       "Technology & Digital Power":              "Technology & Digital Power",
       "Culture, Media & Narrative Power":        "Culture, Media & Narrative",
     },
+    newsletter: "Newsletter",
+    getNewsletter: "Get the newsletter",
+    subscribeSuccess: "You're in! We'll send you the weekly digest.",
+    chooseTopics: "Choose topics",
+    chooseLanguage: "Choose language",
+    profile: "Profile",
+    followedTopics: "Followed topics",
+    noFollowedTopics: "No topics followed yet.",
+    editPreferences: "Edit preferences",
+    signOut: "Sign out",
+    languageEnOnly: "English articles only",
+    languageDeOnly: "German articles only",
+    languageBoth: "Both languages",
+    subscribeButton: "Subscribe",
+    skipForNow: "Skip for now",
+    savePreferences: "Save preferences",
+    newsletterIntro: "Get a weekly digest of the stories that matter. No account needed.",
+    onboardingTitle: "What topics do you follow?",
+    onboardingIntro: "Personalise your experience by choosing the topics you care about.",
   },
   de: {
     tagline: "deine nachrichten, deine bedingungen.",
@@ -110,5 +149,24 @@ export const TRANSLATIONS: Record<Locale, Translations> = {
       "Technology & Digital Power":              "Technologie & Digitale Macht",
       "Culture, Media & Narrative Power":        "Kultur, Medien & Narrative Macht",
     },
+    newsletter: "Newsletter",
+    getNewsletter: "Newsletter abonnieren",
+    subscribeSuccess: "Du bist dabei! Wir schicken dir den wöchentlichen Überblick.",
+    chooseTopics: "Themen wählen",
+    chooseLanguage: "Sprache wählen",
+    profile: "Profil",
+    followedTopics: "Gefolgtte Themen",
+    noFollowedTopics: "Noch keine Themen gefolgt.",
+    editPreferences: "Einstellungen bearbeiten",
+    signOut: "Abmelden",
+    languageEnOnly: "Nur englische Artikel",
+    languageDeOnly: "Nur deutsche Artikel",
+    languageBoth: "Beide Sprachen",
+    subscribeButton: "Abonnieren",
+    skipForNow: "Jetzt überspringen",
+    savePreferences: "Einstellungen speichern",
+    newsletterIntro: "Erhalte wöchentlich die wichtigsten Geschichten. Kein Konto nötig.",
+    onboardingTitle: "Welche Themen interessieren dich?",
+    onboardingIntro: "Personalisiere dein Erlebnis, indem du die Themen auswählst, die dir wichtig sind.",
   },
 };

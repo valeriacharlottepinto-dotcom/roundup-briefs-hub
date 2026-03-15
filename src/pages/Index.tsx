@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Masthead from "@/components/Masthead";
 import FilterBar from "@/components/FilterBar";
 import ArticleGrid from "@/components/ArticleGrid";
@@ -6,9 +6,11 @@ import SiteFooter from "@/components/SiteFooter";
 import AboutPage from "@/components/AboutPage";
 import ImprintPage from "@/components/ImprintPage";
 import ScrollButtons from "@/components/ScrollButton";
+import NewsletterModal from "@/components/NewsletterModal";
 import { useArticles } from "@/hooks/useArticles";
 import { SOURCES_BY_LOCALE, type Locale } from "@/lib/constants";
 import { TRANSLATIONS } from "@/lib/translations";
+import { useAuth } from "@/hooks/useAuth";
 
 interface IndexProps {
   locale: Locale;
@@ -16,8 +18,13 @@ interface IndexProps {
 
 const Index = ({ locale }: IndexProps) => {
   const t = TRANSLATIONS[locale];
+  const { setLocale } = useAuth();
   const [showAbout, setShowAbout] = useState(false);
   const [showImprint, setShowImprint] = useState(false);
+  const [newsletterOpen, setNewsletterOpen] = useState(false);
+
+  // Keep AuthContext locale in sync so OnboardingModal uses the right language
+  useEffect(() => { setLocale(locale); }, [locale, setLocale]);
 
   const {
     articles,
@@ -67,6 +74,7 @@ const Index = ({ locale }: IndexProps) => {
         onAboutToggle={handleAboutToggle}
         locale={locale}
         t={t}
+        onNewsletterClick={() => setNewsletterOpen(true)}
       />
 
       {showImprint ? (
@@ -104,7 +112,7 @@ const Index = ({ locale }: IndexProps) => {
         </>
       )}
 
-      <SiteFooter />
+      <SiteFooter onNewsletterClick={() => setNewsletterOpen(true)} t={t} />
 
       {/* Impressum link — fixed at very bottom */}
       <div className="w-full text-center py-3 border-t border-border bg-background">
@@ -117,6 +125,12 @@ const Index = ({ locale }: IndexProps) => {
       </div>
 
       <ScrollButtons />
+
+      <NewsletterModal
+        open={newsletterOpen}
+        onClose={() => setNewsletterOpen(false)}
+        locale={locale}
+      />
     </div>
   );
 };

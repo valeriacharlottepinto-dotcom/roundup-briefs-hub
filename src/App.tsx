@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import SavedPage from "./pages/SavedPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import type { Locale } from "@/lib/constants";
 
@@ -30,6 +31,11 @@ const App = () => (
             <Route path="/saved" element={<Navigate to="/en/saved" replace />} />
             <Route path="/en/saved" element={<SavedPage locale={"en" as Locale} />} />
             <Route path="/de/saved" element={<SavedPage locale={"de" as Locale} />} />
+
+            {/* Profile */}
+            <Route path="/profile" element={<Navigate to="/en/profile" replace />} />
+            <Route path="/en/profile" element={<ProfilePage locale={"en" as Locale} />} />
+            <Route path="/de/profile" element={<ProfilePage locale={"de" as Locale} />} />
 
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
