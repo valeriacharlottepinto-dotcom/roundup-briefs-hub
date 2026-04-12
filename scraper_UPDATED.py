@@ -18,20 +18,17 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "")
 USE_POSTGRES = bool(DATABASE_URL)
 
 if USE_POSTGRES:
+    # Prefer pg8000 (pure Python, uses Python's ssl module — avoids libpq SSL bugs)
     try:
-        import psycopg2
-        _DRIVER = "psycopg2"
+        import pg8000.dbapi as _pg8000_dbapi
+        _DRIVER = "pg8000"
     except ImportError:
         try:
-            import pg8000.dbapi as _pg8000_dbapi
-            _DRIVER = "pg8000"
+            import psycopg2
+            _DRIVER = "psycopg2"
         except ImportError:
-            try:
-                import psycopg as _psycopg3
-                _DRIVER = "psycopg3"
-            except ImportError:
-                _DRIVER = None
-                USE_POSTGRES = False
+            _DRIVER = None
+            USE_POSTGRES = False
 else:
     _DRIVER = None
 
