@@ -30,41 +30,33 @@ MAX_ARTICLES_PER_SOURCE = 30
 # ─────────────────────────────────────────────────────────────────────────────
 def get_connection():
     if USE_POSTGRES:
-        import urllib.parse, time, ssl, tempfile, os as _os
+        import urllib.parse, time
         parsed = urllib.parse.urlparse(DATABASE_URL)
-
-        # Build SSL root cert path — use certifi if available, else system certs
-        sslrootcert = None
-        try:
-            import certifi
-            sslrootcert = certifi.where()
-        except ImportError:
-            for path in [
-                "/etc/ssl/certs/ca-certificates.crt",   # Ubuntu / Debian
-                "/etc/pki/tls/certs/ca-bundle.crt",      # RHEL / CentOS
-                "/etc/ssl/cert.pem",                     # macOS / BSD
-            ]:
-                if _os.path.exists(path):
-                    sslrootcert = path
-                    break
-
         last_err = None
+
         for attempt in range(3):
             try:
-                kwargs = dict(
+                # Try psycopg3 first (better SSL support), fall back to psycopg2
+                try:
+                    import psycopg
+                    url = DATABASE_URL
+                    if "sslmode" not in url:
+                        url += ("&" if "?" in url else "?") + "sslmode=require"
+                    conn = psycopg.connect(url)
+                    conn._is_psycopg3 = True
+                    return conn
+                except ImportError:
+                    pass  # psycopg3 not available, use psycopg2
+
+                conn = psycopg2.connect(
                     host=parsed.hostname,
                     port=parsed.port or 5432,
                     dbname=parsed.path.lstrip("/"),
                     user=parsed.username,
                     password=parsed.password,
+                    sslmode="require",
                     connect_timeout=30,
                 )
-                if sslrootcert:
-                    kwargs["sslmode"] = "verify-ca"
-                    kwargs["sslrootcert"] = sslrootcert
-                else:
-                    kwargs["sslmode"] = "require"
-                conn = psycopg2.connect(**kwargs)
                 return conn
             except Exception as e:
                 last_err = e
