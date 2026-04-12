@@ -30,19 +30,27 @@ MAX_ARTICLES_PER_SOURCE = 30
 # ─────────────────────────────────────────────────────────────────────────────
 def get_connection():
     if USE_POSTGRES:
-        import urllib.parse
-        # Parse and rebuild with explicit SSL settings for Render
+        import urllib.parse, time
         parsed = urllib.parse.urlparse(DATABASE_URL)
-        conn = psycopg2.connect(
-            host=parsed.hostname,
-            port=parsed.port or 5432,
-            dbname=parsed.path.lstrip("/"),
-            user=parsed.username,
-            password=parsed.password,
-            sslmode="require",
-            connect_timeout=30,
-        )
-        return conn
+        last_err = None
+        for attempt in range(3):
+            try:
+                conn = psycopg2.connect(
+                    host=parsed.hostname,
+                    port=parsed.port or 5432,
+                    dbname=parsed.path.lstrip("/"),
+                    user=parsed.username,
+                    password=parsed.password,
+                    sslmode="require",
+                    connect_timeout=30,
+                )
+                return conn
+            except Exception as e:
+                last_err = e
+                print(f"  ⚠️  DB connection attempt {attempt+1} failed: {e}", flush=True)
+                if attempt < 2:
+                    time.sleep(5)
+        raise last_err
     return sqlite3.connect(DB_FILE)
 
 
