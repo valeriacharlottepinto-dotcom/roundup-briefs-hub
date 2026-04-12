@@ -30,20 +30,41 @@ MAX_ARTICLES_PER_SOURCE = 30
 # ─────────────────────────────────────────────────────────────────────────────
 def get_connection():
     if USE_POSTGRES:
-        import urllib.parse, time
+        import urllib.parse, time, ssl, tempfile, os as _os
         parsed = urllib.parse.urlparse(DATABASE_URL)
+
+        # Build SSL root cert path — use certifi if available, else system certs
+        sslrootcert = None
+        try:
+            import certifi
+            sslrootcert = certifi.where()
+        except ImportError:
+            for path in [
+                "/etc/ssl/certs/ca-certificates.crt",   # Ubuntu / Debian
+                "/etc/pki/tls/certs/ca-bundle.crt",      # RHEL / CentOS
+                "/etc/ssl/cert.pem",                     # macOS / BSD
+            ]:
+                if _os.path.exists(path):
+                    sslrootcert = path
+                    break
+
         last_err = None
         for attempt in range(3):
             try:
-                conn = psycopg2.connect(
+                kwargs = dict(
                     host=parsed.hostname,
                     port=parsed.port or 5432,
                     dbname=parsed.path.lstrip("/"),
                     user=parsed.username,
                     password=parsed.password,
-                    sslmode="require",
                     connect_timeout=30,
                 )
+                if sslrootcert:
+                    kwargs["sslmode"] = "verify-ca"
+                    kwargs["sslrootcert"] = sslrootcert
+                else:
+                    kwargs["sslmode"] = "require"
+                conn = psycopg2.connect(**kwargs)
                 return conn
             except Exception as e:
                 last_err = e
