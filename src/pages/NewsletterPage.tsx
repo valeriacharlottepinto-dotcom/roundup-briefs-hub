@@ -51,18 +51,17 @@ const NewsletterPage = () => {
               Danke!
             </h3>
             <p className="text-[0.95rem] text-muted-foreground leading-relaxed">
-              Du bist jetzt dabei. Jeden Sonntag die wichtigsten Nachrichten
-              direkt in dein Postfach.
+              dabei. der wöchentliche überblick kommt.
             </p>
           </div>
         ) : (
           <>
             <p className="text-[1.05rem] text-foreground leading-relaxed mb-2">
-              Einmal pro Woche die wichtigsten Nachrichten aus den Bereichen
-              Feminismus, Frauen und LGBTQIA+ — direkt in dein Postfach.
+              das Wichtigste der Woche. nach Thema kuratiert, einmal geliefert.
             </p>
             <p className="text-[0.9rem] text-muted-foreground leading-relaxed mb-10">
-              Jeden Sonntag. Kein Spam. Kein Clickbait. Nur das, was zählt.
+              raus aus dem Rauschen — die wesentlichen Geschichten der Woche,
+              kuratiert nach Themen, einmal pro Woche. kein Spam. kein Clickbait.
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4 max-w-[420px]">

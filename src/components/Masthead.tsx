@@ -9,8 +9,8 @@ interface MastheadProps {
 }
 
 const NAV_LINKS = [
-  { label: "News Feed", to: "/de" },
-  { label: "Analyse", to: "/analyse" },
+  { label: "Deutsch", to: "/de" },
+  { label: "English", to: "/en" },
   { label: "Themen", to: "/themen" },
   { label: "Über uns", to: "/ueber-uns" },
   { label: "Newsletter", to: "/newsletter" },
@@ -49,7 +49,7 @@ const Masthead = ({ stats }: MastheadProps) => {
             </h1>
           </Link>
           <p className="mt-1 text-sm text-muted-foreground font-sans">
-            deine nachrichten. deine perspektive.
+            deine nachrichten, deine bedingungen.
           </p>
         </div>
 

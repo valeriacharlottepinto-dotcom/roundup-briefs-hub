@@ -2,10 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
-// Pages — Alex's visual design
-import MapPage        from "./pages/MapPage";
 import FeedPage       from "./pages/FeedPage";
 import ThemenPage     from "./pages/ThemenPage";
 import AnalysisPage   from "./pages/AnalysisPage";
@@ -30,16 +28,18 @@ const App = () => (
         {/* <AuthProvider> */}
         <Routes>
 
-          {/* ── Landing: interactive world map ── */}
-          <Route path="/" element={<MapPage />} />
+          {/* ── Landing: redirect to German feed ── */}
+          <Route path="/" element={<Navigate to="/de" replace />} />
 
-          {/* ── Country feeds ── */}
-          {/* DACH → German locale feed */}
-          <Route path="/de" element={<FeedPage country="Germany"       countryName="Deutschland" />} />
+          {/* ── Main locale feeds ── */}
+          <Route path="/de" element={<FeedPage country="Germany"       countryName="Deutsch" isMainFeed />} />
+          <Route path="/en" element={<FeedPage country="en"            countryName="English" isMainFeed />} />
+
+          {/* ── Country sub-feeds (DACH) ── */}
           <Route path="/at" element={<FeedPage country="Austria"       countryName="Österreich" />} />
           <Route path="/ch" element={<FeedPage country="Switzerland"   countryName="Schweiz" />} />
 
-          {/* International → English locale feed */}
+          {/* ── Country sub-feeds (international) ── */}
           <Route path="/es" element={<FeedPage country="Spain"         countryName="Spanien" />} />
           <Route path="/it" element={<FeedPage country="Italy"         countryName="Italien" />} />
           <Route path="/us" element={<FeedPage country="United States" countryName="USA" />} />
@@ -58,11 +58,8 @@ const App = () => (
           <Route path="/ueber-uns"  element={<UeberUnsPage />} />
 
           {/* ── Auth-protected pages (Valeria's) ── */}
-          {/* Uncomment once useAuth / SavedPage / ProfilePage are present: */}
           {/* <Route path="/de/saved"      element={<SavedPage locale="de" />} /> */}
           {/* <Route path="/en/saved"      element={<SavedPage locale="en" />} /> */}
-          {/* <Route path="/de/profile"    element={<ProfilePage locale="de" />} /> */}
-          {/* <Route path="/en/profile"    element={<ProfilePage locale="en" />} /> */}
 
           {/* ── 404 ── */}
           <Route path="*" element={<NotFound />} />

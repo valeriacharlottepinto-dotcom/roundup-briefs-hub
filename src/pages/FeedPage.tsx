@@ -9,9 +9,10 @@ import { useArticles } from "@/hooks/useArticles";
 interface FeedPageProps {
   country: string;
   countryName: string;
+  isMainFeed?: boolean;
 }
 
-const FeedPage = ({ country, countryName }: FeedPageProps) => {
+const FeedPage = ({ country, countryName, isMainFeed = false }: FeedPageProps) => {
   const {
     articles,
     stats,
@@ -31,16 +32,18 @@ const FeedPage = ({ country, countryName }: FeedPageProps) => {
     <div className="min-h-screen bg-background">
       <Masthead stats={stats} />
 
-      {/* Breadcrumb */}
-      <div className="max-w-[1100px] mx-auto px-4 pt-2 pb-1">
-        <p className="text-xs text-muted-foreground font-sans">
-          <Link to="/" className="hover:text-foreground transition-colors">
-            ← Weltkarte
-          </Link>
-          <span className="mx-1">/</span>
-          <span className="text-foreground font-medium">{countryName}</span>
-        </p>
-      </div>
+      {/* Breadcrumb — only for country sub-feeds, not for the main DE/EN feeds */}
+      {!isMainFeed && (
+        <div className="max-w-[1100px] mx-auto px-4 pt-2 pb-1">
+          <p className="text-xs text-muted-foreground font-sans">
+            <Link to="/de" className="hover:text-foreground transition-colors">
+              ← Deutsch
+            </Link>
+            <span className="mx-1">/</span>
+            <span className="text-foreground font-medium">{countryName}</span>
+          </p>
+        </div>
+      )}
 
       <FilterBar
         filters={filters}

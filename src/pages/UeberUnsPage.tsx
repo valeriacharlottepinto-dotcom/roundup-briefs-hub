@@ -107,30 +107,33 @@ const UeberUnsPage = () => {
 
         <SectionHeading>Unsere Vision</SectionHeading>
         <p className="text-[0.95rem] text-foreground leading-relaxed mb-4">
-          Nachrichten über Feminismus, Frauenrechte und queere Themen landen
-          selten auf den Titelseiten. Sie erscheinen, werden kurz geteilt —
-          und verschwinden wieder. Nicht weil sie unwichtig sind, sondern weil
-          die Strukturen des Mediensystems sie an den Rand drängen.
+          Nachrichten auf deinen Bedingungen lesen — und dabei so gut informiert
+          wie möglich sein.
         </p>
-        <p className="text-[0.95rem] text-foreground leading-relaxed mb-4">
-          <strong>shared ground</strong> ist unsere Antwort darauf. Wir
-          aggregieren Berichterstattung aus dem deutschsprachigen Raum,
-          die sonst untergeht — und machen sie an einem Ort sichtbar,
-          zugänglich und durchsuchbar. Kostenlos. Unabhängig. Für alle.
+        <p className="text-[0.95rem] text-muted-foreground leading-relaxed mb-4">
+          In Zeiten von Polarisierung und Desinformation hilft shared ground dabei,
+          Themen quer durch verschiedene Medien zu verfolgen und die eigene
+          Perspektive zu erweitern. Wir distanzieren uns bewusst von algorithmischen
+          Informationsblasen.
         </p>
-        <p className="text-[0.95rem] text-foreground leading-relaxed">
-          Wir glauben, dass informierte Menschen die Welt verändern.
-          Und dass der erste Schritt dazu ist, die richtigen Informationen
-          überhaupt zu finden.
+        <p className="text-[0.95rem] text-muted-foreground leading-relaxed">
+          Wir nutzen KI (Claude), um diese Plattform zu bauen — und wir sind ehrlich
+          darüber, was das bedeutet. KI trägt inhärente Bias in sich. Wir überprüfen
+          und verbessern unseren Scraping-Ansatz kontinuierlich, um diese zu reduzieren.
         </p>
 
         <SectionHeading>Was wir sind</SectionHeading>
         <p className="text-[0.95rem] text-muted-foreground leading-relaxed mb-4">
-          shared ground ist ein unabhängiger Nachrichtenaggregator — keine
-          Redaktion, kein eigener Journalismus. Wir kuratieren, was andere
-          schreiben. Wir kommentieren nicht, wir wählen nicht aus nach
-          Meinung — wir scrapen RSS-Feeds alle 12 Stunden und filtern nach
-          Keywords, die für unsere Community relevant sind.
+          shared ground ist ein unabhängiger Nachrichtenaggregator — keine Redaktion,
+          kein eigener Journalismus. Wir kuratieren, was andere schreiben.
+          Wir kommentieren nicht — wir scrapen RSS-Feeds alle 12 Stunden und
+          filtern nach Keywords, die für unsere Community relevant sind.
+        </p>
+        <p className="text-[0.95rem] text-muted-foreground leading-relaxed mb-4">
+          Wir haben lange überlegt, ob wir nur progressive und linke Medien
+          aufnehmen sollten. Wir haben uns entschieden, auch konservative Stimmen
+          einzubeziehen — denn gut informiert zu sein bedeutet, zu verstehen,
+          was im gesamten politischen Spektrum passiert.
         </p>
         <p className="text-[0.95rem] text-muted-foreground leading-relaxed">
           Alle Artikel bleiben bei ihren Originalquellen. Wir verlinken immer
@@ -177,7 +180,7 @@ const UeberUnsPage = () => {
         </p>
 
         <p className="mt-12 text-xs text-muted-foreground border-t border-border pt-4">
-          shared ground · Aktualisierung alle 12 Stunden · Unabhängig & kostenlos
+          shared ground · von Valeria Pinto & Alexandra Brandl · täglich aktualisiert
         </p>
 
       </main>
