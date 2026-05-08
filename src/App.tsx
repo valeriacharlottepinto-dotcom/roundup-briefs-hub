@@ -11,11 +11,9 @@ import NewsletterPage from "./pages/NewsletterPage";
 import UeberUnsPage   from "./pages/UeberUnsPage";
 import NotFound       from "./pages/NotFound";
 
-// Auth-protected pages — Valeria's originals (kept unchanged)
-// Uncomment once the Supabase auth files are present:
-// import { AuthProvider } from "./hooks/useAuth";
-// import SavedPage   from "./pages/SavedPage";
-// import ProfilePage from "./pages/ProfilePage";
+import { AuthProvider } from "./contexts/AuthContext";
+import SavedPage   from "./pages/SavedPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const queryClient = new QueryClient();
 
@@ -25,7 +23,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        {/* <AuthProvider> */}
+        <AuthProvider>
         <Routes>
 
           {/* ── Landing: redirect to German feed ── */}
@@ -57,15 +55,15 @@ const App = () => (
           <Route path="/newsletter" element={<NewsletterPage />} />
           <Route path="/ueber-uns"  element={<UeberUnsPage />} />
 
-          {/* ── Auth-protected pages (Valeria's) ── */}
-          {/* <Route path="/de/saved"      element={<SavedPage locale="de" />} /> */}
-          {/* <Route path="/en/saved"      element={<SavedPage locale="en" />} /> */}
+          {/* ── Auth-protected pages ── */}
+          <Route path="/de/saved" element={<SavedPage locale="de" />} />
+          <Route path="/en/saved" element={<SavedPage locale="en" />} />
 
           {/* ── 404 ── */}
           <Route path="*" element={<NotFound />} />
 
         </Routes>
-        {/* </AuthProvider> */}
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
