@@ -46,8 +46,8 @@ When working with Claude: tell it who you are at the start of a session if you'r
 Copy `.env.example` to `.env.local` and fill in the values.
 
 ```
-VITE_SUPABASE_URL        → Supabase project URL (Settings → API)
-VITE_SUPABASE_ANON_KEY   → Supabase anon/public key (Settings → API → Legacy)
+VITE_SUPABASE_URL=https://mhnjjstdayhkdwfxfxlv.supabase.co
+VITE_SUPABASE_ANON_KEY   → get from Supabase → Settings → API Keys → Legacy → anon public
 ```
 
 These are **build-time** variables (Vite bakes them in at build). They must also be set in Cloudflare Pages → Settings → Variables and Secrets → Production.
