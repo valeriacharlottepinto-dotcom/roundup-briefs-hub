@@ -1,25 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type Filters } from "@/hooks/useArticles";
+import { type Locale } from "@/lib/constants";
+import { type Translations } from "@/lib/translations";
 import { Search, X, ChevronDown, Check } from "lucide-react";
 
 interface FilterBarProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
-  sources: string[];
+  localeSources: string[];
   articleCount: number;
+  totalCount: number;
   isFiltered: boolean;
   clearFilters: () => void;
-  loading?: boolean;
+  locale: Locale;
+  t: Translations;
 }
 
 const FilterBar = ({
   filters,
   setFilters,
-  sources,
+  localeSources,
   articleCount,
+  totalCount,
   isFiltered,
   clearFilters,
-  loading = false,
+  t,
 }: FilterBarProps) => {
   const [searchInput, setSearchInput] = useState(filters.search);
   const [sourceOpen, setSourceOpen] = useState(false);
@@ -85,16 +90,20 @@ const FilterBar = ({
 
   const sourceLabel =
     filters.selectedSources.length === 0
-      ? "Alle Quellen"
+      ? t.allSources
       : filters.selectedSources.length === 1
       ? filters.selectedSources[0]
-      : `${filters.selectedSources.length} Quellen`;
+      : `${filters.selectedSources.length} ${t.sources}`;
+
+  const countLabel = isFiltered
+    ? `${articleCount} / ${totalCount} ${t.articles}`
+    : `${totalCount} ${t.articles}`;
 
   return (
     <div className="sticky top-0 z-30 bg-card border-b border-border">
       <div className="max-w-[1100px] mx-auto px-4 py-3 space-y-2">
 
-        {/* ROW A — Heute + Datumsbereich */}
+        {/* ROW A — Today + date range */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={selectToday}
@@ -104,7 +113,7 @@ const FilterBar = ({
                 : "bg-secondary text-secondary-foreground hover:bg-border"
             }`}
           >
-            Heute
+            {t.quickToday}
           </button>
           <span className="hidden sm:inline text-muted-foreground text-xs mx-1">📅</span>
           <input
@@ -112,33 +121,39 @@ const FilterBar = ({
             value={filters.dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             className="text-xs px-2 py-1.5 rounded-sm border border-border bg-card text-foreground w-full sm:w-auto"
-            aria-label="Von Datum"
+            aria-label="From date"
           />
-          <span className="text-xs text-muted-foreground">bis</span>
+          <span className="text-xs text-muted-foreground">{t.dateTo}</span>
           <input
             type="date"
             value={filters.dateTo}
             onChange={(e) => setDateTo(e.target.value)}
             className="text-xs px-2 py-1.5 rounded-sm border border-border bg-card text-foreground w-full sm:w-auto"
-            aria-label="Bis Datum"
+            aria-label="To date"
           />
           {(filters.dateFrom || filters.dateTo) && (
-            <button onClick={clearDates} className="text-muted-foreground hover:text-foreground transition-colors">
+            <button
+              onClick={clearDates}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               <X size={14} />
             </button>
           )}
         </div>
 
-        {/* ROW B — Suche + Quellen + Zurücksetzen + Anzahl */}
+        {/* ROW B — Search + Sources + Clear + Count */}
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
 
           <div className="relative flex-1 min-w-0 sm:min-w-[180px] sm:max-w-[320px]">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Search
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Schlagzeilen durchsuchen…"
+              placeholder={t.searchPlaceholder}
               className="w-full text-xs pl-8 pr-3 py-1.5 rounded-sm border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
@@ -148,10 +163,19 @@ const FilterBar = ({
               onClick={() => setSourceOpen((o) => !o)}
               className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded-sm border border-border bg-card text-foreground whitespace-nowrap w-full sm:w-auto justify-between"
             >
-              <span className={filters.selectedSources.length > 0 ? "text-foreground font-medium" : "text-muted-foreground"}>
+              <span
+                className={
+                  filters.selectedSources.length > 0
+                    ? "text-foreground font-medium"
+                    : "text-muted-foreground"
+                }
+              >
                 {sourceLabel}
               </span>
-              <ChevronDown size={12} className={`transition-transform ${sourceOpen ? "rotate-180" : ""}`} />
+              <ChevronDown
+                size={12}
+                className={`transition-transform ${sourceOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {sourceOpen && (
@@ -161,10 +185,10 @@ const FilterBar = ({
                     onClick={clearSources}
                     className="w-full text-left px-3 py-2 text-xs text-primary hover:bg-secondary border-b border-border font-medium"
                   >
-                    Auswahl löschen ({filters.selectedSources.length})
+                    {t.clearSelection} ({filters.selectedSources.length})
                   </button>
                 )}
-                {sources.map((s) => {
+                {localeSources.map((s) => {
                   const checked = filters.selectedSources.includes(s);
                   return (
                     <label
@@ -172,10 +196,20 @@ const FilterBar = ({
                       onClick={() => toggleSource(s)}
                       className="flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-secondary cursor-pointer select-none"
                     >
-                      <span className={`flex-shrink-0 w-3.5 h-3.5 border rounded-none flex items-center justify-center transition-colors ${checked ? "bg-foreground border-foreground" : "border-border bg-background"}`}>
+                      <span
+                        className={`flex-shrink-0 w-3.5 h-3.5 border rounded-none flex items-center justify-center transition-colors ${
+                          checked
+                            ? "bg-foreground border-foreground"
+                            : "border-border bg-background"
+                        }`}
+                      >
                         {checked && <Check size={9} className="text-background" />}
                       </span>
-                      <span className={checked ? "text-foreground font-medium" : "text-muted-foreground"}>
+                      <span
+                        className={
+                          checked ? "text-foreground font-medium" : "text-muted-foreground"
+                        }
+                      >
                         {s}
                       </span>
                     </label>
@@ -188,17 +222,18 @@ const FilterBar = ({
           <div className="flex items-center gap-2 sm:ml-auto">
             {isFiltered && (
               <button
-                onClick={() => { clearFilters(); setSearchInput(""); }}
+                onClick={() => {
+                  clearFilters();
+                  setSearchInput("");
+                }}
                 className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
               >
-                Alles löschen
+                {t.clearAll}
               </button>
             )}
-            {!loading && (
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                {articleCount} Artikel
-              </span>
-            )}
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {countLabel}
+            </span>
           </div>
         </div>
 

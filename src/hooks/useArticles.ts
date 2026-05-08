@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { type Article, type Stats } from "@/lib/constants";
 
@@ -22,28 +22,25 @@ const defaultFilters: Filters = {
   search: "",
 };
 
-// ─── Country → Locale mapping ─────────────────────────────────────────────────
-// DACH countries map to the German feed; everything else to English.
+const PAGE_SIZE = 30;
+
+// ─── Locale resolution ────────────────────────────────────────────────────────
+// Accepts either a locale ("de" | "en") directly or a country name.
+// DACH countries → German feed; everything else → English.
 
 const DACH_COUNTRIES = new Set(["Germany", "Austria", "Switzerland"]);
 
-function countryToLocale(country?: string): "de" | "en" {
-  if (!country) return "de";
-  return DACH_COUNTRIES.has(country) ? "de" : "en";
+function resolveLocale(localeOrCountry?: string): "de" | "en" {
+  if (!localeOrCountry) return "de";
+  if (localeOrCountry === "de") return "de";
+  if (localeOrCountry === "en") return "en";
+  return DACH_COUNTRIES.has(localeOrCountry) ? "de" : "en";
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-/**
- * useArticles — fetches articles from the Supabase `articles` table.
- *
- * Accepts Alex's `country?` routing parameter, maps it to Valeria's locale
- * (DACH → "de", all others → "en"), and queries Supabase directly.
- *
- * Returns Alex's full interface so FeedPage and FilterBar need no changes.
- */
-export function useArticles(country?: string) {
-  const locale = countryToLocale(country);
+export function useArticles(localeOrCountry?: string) {
+  const locale = resolveLocale(localeOrCountry);
 
   const [allArticles, setAllArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +48,7 @@ export function useArticles(country?: string) {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [olderLoaded, setOlderLoaded] = useState(false);
+  const [page, setPage] = useState(1);
 
   // ── Initial fetch ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -72,7 +70,6 @@ export function useArticles(country?: string) {
           .limit(120);
 
         if (cancelled) return;
-
         if (fetchError) throw fetchError;
 
         setAllArticles((data as Article[]) ?? []);
@@ -117,7 +114,7 @@ export function useArticles(country?: string) {
       setAllArticles((prev) => [...prev, ...((data as Article[]) ?? [])]);
       setOlderLoaded(true);
     } catch {
-      // silently ignore — user can retry
+      // silently ignore
     } finally {
       setLoadingOlder(false);
     }
@@ -154,6 +151,15 @@ export function useArticles(country?: string) {
       filters.search !== "",
     [filters]
   );
+
+  // ── Reset page when filters change ───────────────────────────────────────
+  const prevFilters = useRef(filters);
+  useEffect(() => {
+    if (prevFilters.current !== filters) {
+      setPage(1);
+      prevFilters.current = filters;
+    }
+  }, [filters]);
 
   // ── Derived: filtered article list ───────────────────────────────────────
   const filteredArticles = useMemo(() => {
@@ -209,10 +215,26 @@ export function useArticles(country?: string) {
     });
   }, [allArticles, filters]);
 
-  const clearFilters = useCallback(() => setFilters(defaultFilters), []);
+  // ── Derived: grouped vs flat + pagination ────────────────────────────────
+  const isGrouped = !isFiltered;
+  const totalCount = allArticles.length;
+  const totalPages = isGrouped
+    ? 1
+    : Math.max(1, Math.ceil(filteredArticles.length / PAGE_SIZE));
+
+  // Grouped view: pass all (sections handle their own SECTION_MAX limit)
+  // Flat view: paginate
+  const articles = isGrouped
+    ? filteredArticles
+    : filteredArticles.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const clearFilters = useCallback(() => {
+    setFilters(defaultFilters);
+    setPage(1);
+  }, []);
 
   return {
-    articles: filteredArticles,
+    articles,
     allArticles,
     stats,
     loading,
@@ -221,7 +243,12 @@ export function useArticles(country?: string) {
     setFilters,
     sources,
     isFiltered,
+    isGrouped,
     clearFilters,
+    page,
+    setPage,
+    totalPages,
+    totalCount,
     loadOlderArticles,
     loadingOlder,
     olderLoaded,

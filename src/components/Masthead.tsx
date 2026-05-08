@@ -1,80 +1,171 @@
-import { format } from "date-fns";
-import { Link, NavLink } from "react-router-dom";
-import { Search, Bookmark } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { type Stats, type Locale } from "@/lib/constants";
+import { type Translations } from "@/lib/translations";
 import ThemeToggle from "./ThemeToggle";
+import { Link, useNavigate } from "react-router-dom";
+import { Bookmark, UserCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { format } from "date-fns";
 
-const NAV_LINKS = [
-  { label: "HOME", to: "/de" },
-  { label: "GLOBAL MAP", to: "/map" },
-  { label: "PODCASTS", to: "/podcasts" },
-  { label: "NEWSLETTER", to: "/newsletter" },
-  { label: "ABOUT", to: "/ueber-uns" },
-  { label: "SAVED", to: "/de/saved" },
-];
+interface MastheadProps {
+  stats: Stats | null;
+  showAbout: boolean;
+  onAboutToggle: () => void;
+  locale: Locale;
+  t: Translations;
+  onNewsletterClick: () => void;
+}
 
-const Masthead = () => {
+const Masthead = ({
+  stats,
+  showAbout,
+  onAboutToggle,
+  locale,
+  t,
+  onNewsletterClick,
+}: MastheadProps) => {
+  const navigate = useNavigate();
   const { user, requireAuth } = useAuth();
-  const today = format(new Date(), "EEEE, MMMM d, yyyy");
+
+  const today = new Intl.DateTimeFormat(locale === "de" ? "de-DE" : "en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(new Date());
+
+  const lastScraped = stats?.last_scraped
+    ? format(new Date(stats.last_scraped), "d MMM yyyy, HH:mm")
+    : null;
 
   return (
-    <header>
-      {/* Top bar: date + icons */}
-      <div className="max-w-[1200px] mx-auto px-6 pt-3 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground font-sans tracking-wide">{today}</span>
-        <div className="flex items-center gap-4">
+    <header className="max-w-[1100px] mx-auto px-4 pt-4">
+
+      {/* ── Utility bar ──────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between pb-2.5">
+        <span className="hidden sm:inline text-[0.68rem] text-muted-foreground font-sans uppercase tracking-wider">
+          {today}
+        </span>
+
+        <div className="flex items-center gap-3 ml-auto">
+          {!user && (
+            <button
+              onClick={() => requireAuth(() => {})}
+              className="text-[0.68rem] text-muted-foreground hover:text-foreground transition-colors font-sans"
+              aria-label="Sign in"
+            >
+              sign in
+            </button>
+          )}
+          {user && (
+            <Link
+              to={`/${locale}/profile`}
+              aria-label={t.profile}
+              title={t.profile}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <UserCircle className="w-3.5 h-3.5" strokeWidth={1.5} />
+            </Link>
+          )}
+
+          {/* EN / DE toggle */}
+          <div className="flex items-center rounded border border-border overflow-hidden text-[0.68rem] font-sans">
+            <button
+              onClick={() => navigate("/en")}
+              className={`px-2 py-0.5 transition-colors ${
+                locale === "en"
+                  ? "bg-foreground text-background font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+              aria-label="Switch to English"
+            >
+              EN
+            </button>
+            <button
+              onClick={() => navigate("/de")}
+              className={`px-2 py-0.5 transition-colors border-l border-border ${
+                locale === "de"
+                  ? "bg-foreground text-background font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+              aria-label="Zu Deutsch wechseln"
+            >
+              DE
+            </button>
+          </div>
+
           <ThemeToggle />
-          <button aria-label="Suche" className="text-foreground/60 hover:text-foreground transition-colors">
-            <Search className="w-4 h-4" />
-          </button>
-          <button aria-label="Gespeichert" className="text-foreground/60 hover:text-foreground transition-colors">
-            <Bookmark className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => requireAuth(() => {})}
-            className="text-xs font-semibold font-sans text-foreground/70 hover:text-foreground transition-colors"
-          >
-            {user ? "Profil" : "Sign In"}
-          </button>
         </div>
       </div>
 
-      {/* Title block */}
-      <div className="max-w-[1200px] mx-auto px-6 py-6 text-center border-y border-border mt-3">
-        <Link to="/de" className="inline-block">
-          <h1 className="font-serif-display text-6xl sm:text-8xl font-bold tracking-tight text-foreground hover:opacity-80 transition-opacity leading-none">
-            Shared Ground
-          </h1>
-        </Link>
-        <p className="mt-2 text-[0.6rem] font-sans tracking-[0.3em] uppercase text-muted-foreground">
-          Global Feminist News &amp; Analysis
+      <hr className="border-border" />
+
+      {/* ── Title block ──────────────────────────────────────────────────── */}
+      <div className="text-center py-5 select-none">
+        <h1 className="font-serif-display text-5xl sm:text-6xl font-bold tracking-tight text-foreground">
+          shared ground
+        </h1>
+        <p className="mt-1.5 text-sm text-muted-foreground font-sans tracking-wide">
+          {t.tagline}
         </p>
+        {stats && (
+          <p className="mt-1 text-[0.68rem] text-muted-foreground font-sans">
+            {stats.total.toLocaleString()} {t.articles}
+            {lastScraped && (
+              <> · {t.updatedAt} {lastScraped}</>
+            )}
+          </p>
+        )}
       </div>
 
-      {/* Horizontal nav */}
-      <nav className="border-b border-border">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <ul className="flex items-center justify-center gap-8 py-2.5">
-            {NAV_LINKS.map((link) => (
-              <li key={link.to}>
-                <NavLink
-                  to={link.to}
-                  end={link.to === "/de"}
-                  className={({ isActive }) =>
-                    `text-[0.6rem] font-semibold font-sans tracking-[0.15em] pb-2 border-b-2 transition-colors ${
-                      isActive
-                        ? "border-foreground text-foreground"
-                        : "border-transparent text-muted-foreground hover:text-foreground"
-                    }`
-                  }
-                >
-                  {link.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <hr className="border-border" />
+
+      {/* ── Horizontal nav ───────────────────────────────────────────────── */}
+      <nav
+        aria-label="Main navigation"
+        className="flex items-center justify-center gap-5 sm:gap-8 py-2.5 overflow-x-auto scrollbar-none"
+      >
+        <Link
+          to={`/${locale}`}
+          className="text-[0.65rem] font-sans uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          {locale === "de" ? "Start" : "Home"}
+        </Link>
+
+        <Link
+          to="/map"
+          className="text-[0.65rem] font-sans uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          {locale === "de" ? "Weltkarte" : "Global Map"}
+        </Link>
+
+        <button
+          onClick={onNewsletterClick}
+          className="text-[0.65rem] font-sans uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          Newsletter
+        </button>
+
+        <button
+          onClick={onAboutToggle}
+          className="text-[0.65rem] font-sans uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          {showAbout ? t.back : t.about}
+        </button>
+
+        <Link
+          to={`/${locale}/saved`}
+          className="text-[0.65rem] font-sans uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap flex items-center gap-1"
+        >
+          <Bookmark
+            className="w-2.5 h-2.5"
+            fill={user ? "currentColor" : "none"}
+            strokeWidth={1.5}
+          />
+          {locale === "de" ? "Gespeichert" : "Saved"}
+        </Link>
       </nav>
+
+      <hr className="border-border" />
     </header>
   );
 };

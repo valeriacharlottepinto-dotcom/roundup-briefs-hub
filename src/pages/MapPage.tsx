@@ -1,26 +1,19 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from "react-simple-maps";
 
 const GEO_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
+// Countries with live news feeds — mapped to their locale path
 const LIVE_COUNTRIES: Record<string, { name: string; path: string }> = {
-  // DACH
   "276": { name: "Deutschland",    path: "/de" },
-  "40":  { name: "Österreich",     path: "/at" },
-  "040": { name: "Österreich",     path: "/at" },
-  "756": { name: "Schweiz",        path: "/ch" },
-  // International
-  "724": { name: "Spanien",        path: "/es" },
-  "380": { name: "Italien",        path: "/it" },
-  "840": { name: "USA",            path: "/us" },
-  "156": { name: "China",          path: "/cn" },
-  "800": { name: "Uganda",         path: "/ug" },
-  "246": { name: "Finnland",       path: "/fi" },
-  "792": { name: "Türkei",         path: "/tr" },
-  "364": { name: "Iran",           path: "/ir" },
-  "710": { name: "Südafrika",      path: "/za" },
-  "356": { name: "Indien",         path: "/in" },
+  "40":  { name: "Österreich",     path: "/de" },
+  "040": { name: "Österreich",     path: "/de" },
+  "756": { name: "Schweiz",        path: "/de" },
+  "840": { name: "USA",            path: "/en" },
+  "826": { name: "United Kingdom", path: "/en" },
+  "036": { name: "Australia",      path: "/en" },
+  "124": { name: "Canada",         path: "/en" },
 };
 
 interface TooltipState {
@@ -108,6 +101,7 @@ const MapPage = () => {
         position: "relative",
       }}
     >
+      {/* Title */}
       <div style={{ textAlign: "center", marginBottom: "1rem", zIndex: 10 }}>
         <h1
           style={{
@@ -135,6 +129,7 @@ const MapPage = () => {
         </p>
       </div>
 
+      {/* Map */}
       <div style={{ width: "100%", maxWidth: "1200px", flex: 1, minHeight: 0 }}>
         <ComposableMap
           projection="geoNaturalEarth1"
@@ -160,7 +155,9 @@ const MapPage = () => {
                     <Geography
                       key={geo.rsmKey}
                       geography={geo}
-                      onMouseMove={(e) => handleMouseMove(e, geoId, countryName, isLive)}
+                      onMouseMove={(e) =>
+                        handleMouseMove(e, geoId, countryName, isLive)
+                      }
                       onMouseLeave={handleMouseLeave}
                       onClick={() => handleClick(geoId)}
                       style={{
@@ -170,7 +167,9 @@ const MapPage = () => {
                           strokeWidth: 0.5,
                           outline: "none",
                           cursor: isLive ? "pointer" : "default",
-                          filter: isLive ? "drop-shadow(0 0 6px rgba(107,33,168,0.6))" : "none",
+                          filter: isLive
+                            ? "drop-shadow(0 0 6px rgba(107,33,168,0.6))"
+                            : "none",
                         },
                         hover: {
                           fill: isLive ? "#9333ea" : "#2a2a2a",
@@ -178,7 +177,9 @@ const MapPage = () => {
                           strokeWidth: isLive ? 1 : 0.5,
                           outline: "none",
                           cursor: isLive ? "pointer" : "default",
-                          filter: isLive ? "drop-shadow(0 0 10px rgba(168,85,247,0.8))" : "none",
+                          filter: isLive
+                            ? "drop-shadow(0 0 10px rgba(168,85,247,0.8))"
+                            : "none",
                         },
                         pressed: {
                           fill: isLive ? "#7e22ce" : "#1e1e1e",
@@ -194,11 +195,14 @@ const MapPage = () => {
         </ComposableMap>
       </div>
 
+      {/* Legend */}
       <div style={{ display: "flex", gap: "1.5rem", paddingBottom: "1.5rem", zIndex: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <div
             style={{
-              width: 10, height: 10, borderRadius: "50%",
+              width: 10,
+              height: 10,
+              borderRadius: "50%",
               background: "#6b21a8",
               boxShadow: "0 0 6px rgba(107,33,168,0.8)",
             }}
@@ -215,7 +219,14 @@ const MapPage = () => {
         </div>
       </div>
 
-      {/* Top-right navigation */}
+      {/* Top-left: back link */}
+      <div style={{ position: "absolute", top: "1.5rem", left: "1.5rem", zIndex: 20 }}>
+        <Link to="/de" style={{ ...NAV_LINK_STYLE, color: "#555" }}>
+          ← shared ground
+        </Link>
+      </div>
+
+      {/* Top-right: locale links */}
       <div
         style={{
           position: "absolute",
@@ -226,9 +237,8 @@ const MapPage = () => {
           zIndex: 20,
         }}
       >
-        <a href="/themen" style={NAV_LINK_STYLE}>Themen</a>
-        <a href="/newsletter" style={NAV_LINK_STYLE}>Newsletter</a>
-        <a href="/ueber-uns" style={NAV_LINK_STYLE}>Über uns</a>
+        <Link to="/de" style={NAV_LINK_STYLE}>Deutsch</Link>
+        <Link to="/en" style={NAV_LINK_STYLE}>English</Link>
       </div>
 
       {/* Zoom controls */}
@@ -247,6 +257,7 @@ const MapPage = () => {
         <button onClick={handleZoomOut} style={ZOOM_BTN_STYLE}>−</button>
       </div>
 
+      {/* Tooltip */}
       {tooltip && tooltip.name && (
         <div
           style={{

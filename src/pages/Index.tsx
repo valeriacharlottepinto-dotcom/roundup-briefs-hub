@@ -4,7 +4,6 @@ import FilterBar from "@/components/FilterBar";
 import ArticleGrid from "@/components/ArticleGrid";
 import SiteFooter from "@/components/SiteFooter";
 import ContactModal from "@/components/ContactModal";
-import ScrapingLogicPage from "@/components/ScrapingLogicPage";
 import AboutPage from "@/components/AboutPage";
 import ImprintPage from "@/components/ImprintPage";
 import ScrollButtons from "@/components/ScrollButton";
@@ -25,10 +24,11 @@ const Index = ({ locale }: IndexProps) => {
   const [showImprint, setShowImprint] = useState(false);
   const [newsletterOpen, setNewsletterOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
-  const [showScrapingLogic, setShowScrapingLogic] = useState(false);
 
   // Keep AuthContext locale in sync so OnboardingModal uses the right language
-  useEffect(() => { setLocale(locale); }, [locale, setLocale]);
+  useEffect(() => {
+    setLocale(locale);
+  }, [locale, setLocale]);
 
   const {
     articles,
@@ -46,7 +46,6 @@ const Index = ({ locale }: IndexProps) => {
     totalCount,
   } = useArticles(locale);
 
-  // "See all" in grouped sections → switch to filtered view for that topic
   const handleTopicClick = useCallback(
     (topic: string) => {
       setFilters((f) => ({ ...f, selectedTopics: [topic] }));
@@ -58,17 +57,12 @@ const Index = ({ locale }: IndexProps) => {
   const handleAboutToggle = () => {
     setShowAbout((v) => !v);
     setShowImprint(false);
-    setShowScrapingLogic(false);
   };
 
   const handleImprintOpen = () => {
     setShowImprint(true);
     setShowAbout(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleImprintClose = () => {
-    setShowImprint(false);
   };
 
   return (
@@ -80,14 +74,10 @@ const Index = ({ locale }: IndexProps) => {
         locale={locale}
         t={t}
         onNewsletterClick={() => setNewsletterOpen(true)}
-        onContactClick={() => setContactOpen(true)}
-        onScrapingLogicClick={() => { setShowScrapingLogic(true); setShowAbout(false); setShowImprint(false); }}
       />
 
       {showImprint ? (
-        <ImprintPage onClose={handleImprintClose} />
-      ) : showScrapingLogic ? (
-        <ScrapingLogicPage onClose={() => setShowScrapingLogic(false)} />
+        <ImprintPage onClose={() => setShowImprint(false)} />
       ) : showAbout ? (
         <AboutPage />
       ) : (
@@ -127,7 +117,7 @@ const Index = ({ locale }: IndexProps) => {
         t={t}
       />
 
-      {/* Impressum link — fixed at very bottom */}
+      {/* Impressum */}
       <div className="w-full text-center py-3 border-t border-border bg-background">
         <button
           onClick={handleImprintOpen}
