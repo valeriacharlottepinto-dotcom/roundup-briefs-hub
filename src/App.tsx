@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import FeedPage       from "./pages/FeedPage";
+import MapPage        from "./pages/MapPage";
 import ThemenPage     from "./pages/ThemenPage";
 import AnalysisPage   from "./pages/AnalysisPage";
 import NewsletterPage from "./pages/NewsletterPage";
@@ -48,6 +49,9 @@ const App = () => (
           <Route path="/ir" element={<FeedPage country="Iran"          countryName="Iran" />} />
           <Route path="/za" element={<FeedPage country="South Africa"  countryName="Südafrika" />} />
           <Route path="/in" element={<FeedPage country="India"         countryName="Indien" />} />
+
+          {/* ── Map ── */}
+          <Route path="/map" element={<MapPage />} />
 
           {/* ── Static pages ── */}
           <Route path="/themen"     element={<ThemenPage />} />

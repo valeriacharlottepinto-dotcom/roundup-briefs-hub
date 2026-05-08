@@ -1,104 +1,80 @@
-import { type Stats } from "@/lib/constants";
 import { format } from "date-fns";
-import { Link, useLocation } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { Link, NavLink } from "react-router-dom";
+import { Search, Bookmark } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import ThemeToggle from "./ThemeToggle";
 
-interface MastheadProps {
-  stats?: Stats | null;
-}
-
 const NAV_LINKS = [
-  { label: "Deutsch", to: "/de" },
-  { label: "English", to: "/en" },
-  { label: "Themen", to: "/themen" },
-  { label: "Über uns", to: "/ueber-uns" },
-  { label: "Newsletter", to: "/newsletter" },
+  { label: "HOME", to: "/de" },
+  { label: "GLOBAL MAP", to: "/map" },
+  { label: "PODCASTS", to: "/podcasts" },
+  { label: "NEWSLETTER", to: "/newsletter" },
+  { label: "ABOUT", to: "/ueber-uns" },
+  { label: "SAVED", to: "/de/saved" },
 ];
 
-const Masthead = ({ stats }: MastheadProps) => {
-  const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const lastScraped = stats?.last_scraped
-    ? format(new Date(stats.last_scraped), "d MMM yyyy, HH:mm")
-    : null;
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+const Masthead = () => {
+  const { user, requireAuth } = useAuth();
+  const today = format(new Date(), "EEEE, MMMM d, yyyy");
 
   return (
-    <header className="max-w-[1100px] mx-auto px-4 pt-6 pb-4">
-      <div className="flex flex-row items-start justify-between sm:relative sm:min-h-[4.5rem]">
-
-        {/* Left spacer for desktop balance */}
-        <div className="hidden sm:block flex-1" />
-
-        {/* Title — centred */}
-        <div className="text-center flex-1 flex flex-col items-center">
-          <Link to="/">
-            <h1 className="font-serif-display text-4xl sm:text-5xl font-bold tracking-tight text-foreground hover:opacity-80 transition-opacity">
-              shared ground
-            </h1>
-          </Link>
-          <p className="mt-1 text-sm text-muted-foreground font-sans">
-            deine nachrichten, deine bedingungen.
-          </p>
-        </div>
-
-        {/* Right: controls */}
-        <div className="flex-1 flex flex-col items-end gap-2">
-          {/* Buttons row */}
-          <div ref={menuRef} className="relative flex items-center gap-3">
-            <ThemeToggle />
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex flex-col gap-1.5 p-1 text-foreground hover:opacity-70 transition-opacity"
-              aria-label="Menu"
-            >
-              <span className="block w-5 h-0.5 bg-current" />
-              <span className="block w-5 h-0.5 bg-current" />
-              <span className="block w-5 h-0.5 bg-current" />
-            </button>
-
-            {menuOpen && (
-              <div className="absolute right-0 top-9 w-44 bg-background border border-border shadow-md rounded-sm py-1 z-[9999]">
-                {NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.to}
-                    to={link.to}
-                    onClick={() => setMenuOpen(false)}
-                    className={`block px-4 py-2.5 text-sm font-sans transition-colors hover:bg-secondary ${
-                      location.pathname === link.to
-                        ? "text-foreground font-semibold"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Stats below buttons — only on home, desktop */}
-          {location.pathname === "/" && stats && (
-            <div className="hidden sm:block text-right text-xs text-muted-foreground uppercase tracking-wider font-sans leading-relaxed">
-              <div>{stats.total.toLocaleString()} Artikel</div>
-              {lastScraped && <div>Aktualisiert {lastScraped}</div>}
-            </div>
-          )}
+    <header>
+      {/* Top bar: date + icons */}
+      <div className="max-w-[1200px] mx-auto px-6 pt-3 flex items-center justify-between">
+        <span className="text-xs text-muted-foreground font-sans tracking-wide">{today}</span>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          <button aria-label="Suche" className="text-foreground/60 hover:text-foreground transition-colors">
+            <Search className="w-4 h-4" />
+          </button>
+          <button aria-label="Gespeichert" className="text-foreground/60 hover:text-foreground transition-colors">
+            <Bookmark className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => requireAuth(() => {})}
+            className="text-xs font-semibold font-sans text-foreground/70 hover:text-foreground transition-colors"
+          >
+            {user ? "Profil" : "Sign In"}
+          </button>
         </div>
       </div>
 
-      <hr className="mt-4 border-border" />
+      {/* Title block */}
+      <div className="max-w-[1200px] mx-auto px-6 py-6 text-center border-y border-border mt-3">
+        <Link to="/de" className="inline-block">
+          <h1 className="font-serif-display text-6xl sm:text-8xl font-bold tracking-tight text-foreground hover:opacity-80 transition-opacity leading-none">
+            Shared Ground
+          </h1>
+        </Link>
+        <p className="mt-2 text-[0.6rem] font-sans tracking-[0.3em] uppercase text-muted-foreground">
+          Global Feminist News &amp; Analysis
+        </p>
+      </div>
+
+      {/* Horizontal nav */}
+      <nav className="border-b border-border">
+        <div className="max-w-[1200px] mx-auto px-6">
+          <ul className="flex items-center justify-center gap-8 py-2.5">
+            {NAV_LINKS.map((link) => (
+              <li key={link.to}>
+                <NavLink
+                  to={link.to}
+                  end={link.to === "/de"}
+                  className={({ isActive }) =>
+                    `text-[0.6rem] font-semibold font-sans tracking-[0.15em] pb-2 border-b-2 transition-colors ${
+                      isActive
+                        ? "border-foreground text-foreground"
+                        : "border-transparent text-muted-foreground hover:text-foreground"
+                    }`
+                  }
+                >
+                  {link.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </nav>
     </header>
   );
 };

@@ -1,7 +1,7 @@
 import { TOPIC_COLORS, getSourceBorderColor } from "@/lib/constants";
 import type { Article } from "@/lib/constants";
 
-type Variant = "hero" | "medium" | "default";
+type Variant = "hero" | "medium" | "default" | "list";
 
 interface Props {
   article: Article & { image_url?: string };
@@ -161,6 +161,39 @@ const ArticleCard = ({ article, variant = "default" }: Props) => {
               className="text-xs text-primary hover:underline underline-offset-2 font-medium"
             />
           </div>
+        </div>
+      </article>
+    );
+  }
+
+  if (variant === "list") {
+    const category = article.category || article.topics?.split(",")[0]?.trim() || "";
+    return (
+      <article className="group flex gap-3">
+        {imageUrl && (
+          <div className="w-16 h-16 flex-shrink-0 overflow-hidden rounded-sm">
+            <img
+              src={imageUrl}
+              alt={article.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              onError={handleImgError}
+            />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          {category && (
+            <p className="text-[0.55rem] font-bold tracking-widest uppercase text-primary mb-0.5">
+              {category}
+            </p>
+          )}
+          <a href={article.link} target="_blank" rel="noopener noreferrer">
+            <h3 className="text-sm font-bold text-foreground leading-snug group-hover:text-primary transition-colors line-clamp-3">
+              {article.title}
+            </h3>
+          </a>
+          <p className="text-[0.6rem] text-muted-foreground mt-1 uppercase tracking-wide">
+            {article.source}{date ? ` · ${date}` : ""}
+          </p>
         </div>
       </article>
     );
