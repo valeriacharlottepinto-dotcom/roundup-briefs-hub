@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import FeedPage       from "./pages/FeedPage";
 import MapPage        from "./pages/MapPage";
@@ -27,8 +27,8 @@ const App = () => (
         <AuthProvider>
         <Routes>
 
-          {/* ── Landing: redirect to German feed ── */}
-          <Route path="/" element={<Navigate to="/de" replace />} />
+          {/* ── Landing: dark world map ── */}
+          <Route path="/" element={<MapPage />} />
 
           {/* ── Main locale feeds ── */}
           <Route path="/de" element={<FeedPage country="Germany"       countryName="Deutsch" isMainFeed />} />
