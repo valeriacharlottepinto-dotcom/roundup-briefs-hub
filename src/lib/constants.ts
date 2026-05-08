@@ -1,7 +1,5 @@
 export type Locale = "en" | "de";
 
-export const API_BASE = "https://roundup-briefs.onrender.com";
-
 export interface Article {
   id: number;
   title: string;

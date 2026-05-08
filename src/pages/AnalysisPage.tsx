@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import Masthead from "@/components/Masthead";
 import SiteFooter from "@/components/SiteFooter";
-import { API_BASE } from "@/lib/constants";
+import { supabase } from "@/lib/supabase";
 
 const COLORS = [
   "#C8003C","#4A1FA8","#006064","#E65100","#1B5E20",
@@ -29,14 +29,64 @@ const AnalysisPage = () => {
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [s, d, k] = await Promise.all([
-          fetch(`${API_BASE}/api/analytics/sources`).then(r => r.json()),
-          fetch(`${API_BASE}/api/analytics/daily`).then(r => r.json()),
-          fetch(`${API_BASE}/api/analytics/keywords`).then(r => r.json()),
-        ]);
-        setSourcesData(s);
-        setDailyData(d);
-        setKeywordsData(k.slice(0, 20));
+        const ninetyDaysAgo = new Date(
+          Date.now() - 90 * 24 * 60 * 60 * 1000
+        ).toISOString();
+        const sevenDaysAgo = new Date(
+          Date.now() - 7 * 24 * 60 * 60 * 1000
+        );
+
+        const { data, error } = await supabase
+          .from("articles")
+          .select("source, scraped_at, published_at, topics")
+          .gte("scraped_at", ninetyDaysAgo);
+
+        if (error || !data) throw error;
+
+        // ── Articles per source (last 7 days) ──────────────────────────────
+        const sourceMap: Record<string, number> = {};
+        data
+          .filter((a) => new Date(a.scraped_at) >= sevenDaysAgo)
+          .forEach((a) => {
+            sourceMap[a.source] = (sourceMap[a.source] || 0) + 1;
+          });
+        setSourcesData(
+          Object.entries(sourceMap)
+            .map(([source, count]) => ({ source, count }))
+            .sort((a, b) => b.count - a.count)
+        );
+
+        // ── Articles per day (last 90 days) ────────────────────────────────
+        const dailyMap: Record<string, number> = {};
+        data.forEach((a) => {
+          const date = (a.published_at || a.scraped_at).slice(0, 10);
+          if (date) dailyMap[date] = (dailyMap[date] || 0) + 1;
+        });
+        setDailyData(
+          Object.entries(dailyMap)
+            .map(([date, count]) => ({ date, count }))
+            .sort((a, b) => a.date.localeCompare(b.date))
+        );
+
+        // ── Top 20 topics (from the topics field) ──────────────────────────
+        const kwMap: Record<string, number> = {};
+        data.forEach((a) => {
+          if (a.topics) {
+            a.topics
+              .split(",")
+              .map((t: string) => t.trim())
+              .filter(Boolean)
+              .forEach((t: string) => {
+                kwMap[t] = (kwMap[t] || 0) + 1;
+              });
+          }
+        });
+        setKeywordsData(
+          Object.entries(kwMap)
+            .map(([keyword, count]) => ({ keyword, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 20)
+        );
       } catch (e) {
         console.error(e);
       } finally {
@@ -121,9 +171,9 @@ const AnalysisPage = () => {
           </ResponsiveContainer>
         </div>
 
-        <SectionHeading>Häufigste Keywords</SectionHeading>
+        <SectionHeading>Häufigste Themen</SectionHeading>
         <p className="text-[0.85rem] text-muted-foreground font-sans mb-6">
-          Die 20 meistgenannten Keywords in allen Artikeln.
+          Die 20 meistvertretenen Themen in allen Artikeln.
         </p>
         <div className="w-full h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -134,7 +184,7 @@ const AnalysisPage = () => {
                 type="category"
                 dataKey="keyword"
                 tick={{ fontSize: 10 }}
-                width={140}
+                width={200}
               />
               <Tooltip formatter={(value) => [`${value}x`]} />
               <Bar dataKey="count" fill="#4A1FA8" radius={[0, 4, 4, 0]} />

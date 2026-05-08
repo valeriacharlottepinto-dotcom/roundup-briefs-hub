@@ -184,3 +184,53 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+
+
+-- ── 7. articles ───────────────────────────────────────────────────────────────
+-- Public news articles written by the scraper.
+-- Anyone can read; only the service role (scraper) can write.
+
+CREATE TABLE IF NOT EXISTS articles (
+  id               BIGSERIAL PRIMARY KEY,
+  url_hash         TEXT UNIQUE NOT NULL,
+  title            TEXT NOT NULL DEFAULT '',
+  link             TEXT NOT NULL DEFAULT '',
+  summary          TEXT DEFAULT '',
+  source           TEXT NOT NULL DEFAULT '',
+  country          TEXT DEFAULT '',
+  category         TEXT DEFAULT '',
+  tags             TEXT DEFAULT '',
+  topics           TEXT DEFAULT '',
+  scraped_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  published_at     TIMESTAMPTZ,
+  is_paywalled     BOOLEAN NOT NULL DEFAULT FALSE,
+  locale           TEXT NOT NULL DEFAULT 'en',
+  paywall_override BOOLEAN
+);
+
+ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Articles are publicly readable"
+  ON articles FOR SELECT
+  USING (true);
+
+-- Service role key bypasses RLS for scraper inserts/deletes.
+-- No additional policies needed for INSERT/DELETE — the scraper uses service role.
+
+
+-- ── 8. newsletter_subscribers ─────────────────────────────────────────────────
+-- E-mails signed up for the weekly digest newsletter.
+
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  id         UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  email      TEXT UNIQUE NOT NULL,
+  locale     TEXT        NOT NULL DEFAULT 'de',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE newsletter_subscribers ENABLE ROW LEVEL SECURITY;
+
+-- Allow anonymous insert (public sign-up form)
+CREATE POLICY "Anyone can subscribe to newsletter"
+  ON newsletter_subscribers FOR INSERT
+  WITH CHECK (true);

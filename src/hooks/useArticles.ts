@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { API_BASE, type Article, type Stats } from "@/lib/constants";
+import { supabase } from "@/lib/supabase";
+import { type Article, type Stats } from "@/lib/constants";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -31,22 +32,13 @@ function countryToLocale(country?: string): "de" | "en" {
   return DACH_COUNTRIES.has(country) ? "de" : "en";
 }
 
-// ─── Date helpers ─────────────────────────────────────────────────────────────
-
-function dateStrDaysAgo(days: number): string {
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
-}
-
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 /**
- * Hybrid useArticles hook.
+ * useArticles — fetches articles from the Supabase `articles` table.
  *
  * Accepts Alex's `country?` routing parameter, maps it to Valeria's locale
- * (DACH → "de", all others → "en"), and fetches from Valeria's API at
- * API_BASE/api/articles?locale=…
+ * (DACH → "de", all others → "en"), and queries Supabase directly.
  *
  * Returns Alex's full interface so FeedPage and FilterBar need no changes.
  */
@@ -54,7 +46,6 @@ export function useArticles(country?: string) {
   const locale = countryToLocale(country);
 
   const [allArticles, setAllArticles] = useState<Article[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -72,26 +63,23 @@ export function useArticles(country?: string) {
       setAllArticles([]);
 
       try {
-        const [articlesRes, statsRes] = await Promise.all([
-          fetch(`${API_BASE}/api/articles?locale=${locale}&limit=120`),
-          fetch(`${API_BASE}/api/stats`),
-        ]);
+        const { data, error: fetchError } = await supabase
+          .from("articles")
+          .select("*")
+          .eq("locale", locale)
+          .order("published_at", { ascending: false, nullsFirst: false })
+          .order("scraped_at", { ascending: false })
+          .limit(120);
 
-        if (!articlesRes.ok || !statsRes.ok) {
-          throw new Error("Failed to fetch");
-        }
+        if (cancelled) return;
 
-        const articlesData = await articlesRes.json();
-        const statsData = await statsRes.json();
+        if (fetchError) throw fetchError;
 
-        if (!cancelled) {
-          setAllArticles(Array.isArray(articlesData) ? articlesData : []);
-          setStats(statsData);
-        }
+        setAllArticles((data as Article[]) ?? []);
       } catch {
         if (!cancelled) {
           setError(
-            "Artikel konnten nicht geladen werden. Der Server wacht möglicherweise gerade auf — bitte lade die Seite neu."
+            "Artikel konnten nicht geladen werden — bitte lade die Seite neu."
           );
         }
       } finally {
@@ -100,7 +88,9 @@ export function useArticles(country?: string) {
     }
 
     fetchData();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [locale]);
 
   // ── Load older articles (up to 3 months back) ────────────────────────────
@@ -108,21 +98,44 @@ export function useArticles(country?: string) {
     if (olderLoaded || loadingOlder) return;
     setLoadingOlder(true);
     try {
-      const threeWeeksAgo = dateStrDaysAgo(21);
-      const threeMonthsAgo = dateStrDaysAgo(90);
-      const res = await fetch(
-        `${API_BASE}/api/articles?locale=${locale}&limit=200&date_from=${threeMonthsAgo}&date_to=${threeWeeksAgo}`
-      );
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setAllArticles((prev) => [...prev, ...(Array.isArray(data) ? data : [])]);
+      const threeWeeksAgo = new Date(
+        Date.now() - 21 * 24 * 60 * 60 * 1000
+      ).toISOString();
+      const threeMonthsAgo = new Date(
+        Date.now() - 90 * 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      const { data } = await supabase
+        .from("articles")
+        .select("*")
+        .eq("locale", locale)
+        .gte("published_at", threeMonthsAgo)
+        .lt("published_at", threeWeeksAgo)
+        .order("published_at", { ascending: false })
+        .limit(200);
+
+      setAllArticles((prev) => [...prev, ...((data as Article[]) ?? [])]);
       setOlderLoaded(true);
     } catch {
-      // silently ignore — user can retry by clicking the button again
+      // silently ignore — user can retry
     } finally {
       setLoadingOlder(false);
     }
   }, [locale, olderLoaded, loadingOlder]);
+
+  // ── Derived: stats ───────────────────────────────────────────────────────
+  const stats = useMemo<Stats | null>(() => {
+    if (!allArticles.length) return null;
+    return {
+      total: allArticles.length,
+      lgbtqia_plus: allArticles.filter((a) =>
+        (a.tags || "").includes("lgbtqia+")
+      ).length,
+      women: allArticles.filter((a) => (a.tags || "").includes("women"))
+        .length,
+      last_scraped: allArticles[0]?.scraped_at ?? "",
+    };
+  }, [allArticles]);
 
   // ── Derived: unique sources list ─────────────────────────────────────────
   const sources = useMemo(() => {

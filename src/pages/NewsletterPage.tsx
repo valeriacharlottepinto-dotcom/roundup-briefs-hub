@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Masthead from "@/components/Masthead";
 import SiteFooter from "@/components/SiteFooter";
-import { API_BASE } from "@/lib/constants";
+import { supabase } from "@/lib/supabase";
 
 type Status = "idle" | "loading" | "success" | "error" | "duplicate";
 
@@ -15,22 +15,21 @@ const NewsletterPage = () => {
     if (!email.trim()) return;
     setStatus("loading");
     try {
-      const res = await fetch(`${API_BASE}/api/newsletter/subscribe`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      const data = await res.json();
-      if (res.ok) {
+      const { error } = await supabase
+        .from("newsletter_subscribers")
+        .insert({ email: email.trim(), locale: "de" });
+
+      if (!error) {
         setStatus("success");
-      } else if (res.status === 409) {
+      } else if (error.code === "23505") {
+        // unique_violation — already subscribed
         setStatus("duplicate");
       } else {
-        setErrorMsg(data.error || "Unbekannter Fehler.");
+        setErrorMsg(error.message || "Unbekannter Fehler.");
         setStatus("error");
       }
     } catch {
-      setErrorMsg("Keine Verbindung zum Server. Bitte versuch es später.");
+      setErrorMsg("Keine Verbindung. Bitte versuch es später.");
       setStatus("error");
     }
   };

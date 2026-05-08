@@ -3,7 +3,7 @@ scraper.py
 Fetches articles from news sources and filters by keywords related to
 feminist, LGBTQIA+, and global rights topics.
 Uses a systems-of-power taxonomy with 9 primary system categories.
-Supports both SQLite (local dev) and PostgreSQL (Render production).
+Supports Supabase (production), SQLite (local dev fallback).
 """
 
 import feedparser
@@ -11,14 +11,28 @@ import sqlite3
 import hashlib
 import re
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 
-# ── Postgres support (optional — only used when DATABASE_URL is set) ──────────
+# ── Supabase (primary — used when SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY set) ─
+SUPABASE_URL          = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SERVICE_KEY  = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+USE_SUPABASE          = bool(SUPABASE_URL and SUPABASE_SERVICE_KEY)
+
+_supabase = None
+if USE_SUPABASE:
+    try:
+        from supabase import create_client
+        _supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+        print("✅  Supabase client initialised.", flush=True)
+    except ImportError:
+        print("⚠️  supabase-py not installed. Falling back to SQLite.", flush=True)
+        USE_SUPABASE = False
+
+# ── Postgres legacy support (only if DATABASE_URL set and Supabase not available)
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
-USE_POSTGRES = bool(DATABASE_URL)
+USE_POSTGRES = bool(DATABASE_URL) and not USE_SUPABASE
 
 if USE_POSTGRES:
-    # Prefer pg8000 (pure Python, uses Python's ssl module — avoids libpq SSL bugs)
     try:
         import pg8000.dbapi as _pg8000_dbapi
         _DRIVER = "pg8000"
@@ -732,6 +746,18 @@ SOURCE_DEFAULT_TOPIC_DE = {
 #  DATABASE SETUP
 # ─────────────────────────────────────────────────────────────────────────────
 def setup_database():
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
+
+    if USE_SUPABASE:
+        # Table is created via supabase/schema.sql — just purge old articles
+        try:
+            _supabase.table("articles").delete().lt("scraped_at", cutoff).execute()
+            print("✅ Supabase: old articles purged.", flush=True)
+        except Exception as e:
+            print(f"⚠️  Supabase purge failed (non-fatal): {e}", flush=True)
+        return
+
+    # ── SQLite / Postgres fallback ────────────────────────────────────────
     conn   = get_connection()
     cursor = conn.cursor()
     ph     = "%s" if USE_POSTGRES else "?"
@@ -807,7 +833,6 @@ def setup_database():
         conn.commit()
 
     # Purge articles older than 30 days
-    cutoff = (datetime.now() - timedelta(days=30)).isoformat()
     cursor.execute(f"DELETE FROM articles WHERE scraped_at < {ph}", [cutoff])
     conn.commit()
     conn.close()
@@ -960,12 +985,15 @@ def scrape_all_feeds():
     for source_name, feed_info in FEEDS.items():
         feed_url = feed_info["url"]
         country  = feed_info["country"]
-        locale   = feed_info.get("locale", "en")   # ← new: read locale from feed config
+        locale   = feed_info.get("locale", "en")
         print(f"  📡 Scraping [{locale.upper()}]: {source_name}...", flush=True)
 
-        conn   = get_connection()
-        cursor = conn.cursor()
-        new_count = 0
+        new_count  = 0
+        batch_rows = []   # collected for Supabase batch upsert
+
+        # Only open a DB connection for SQLite/Postgres paths
+        conn   = get_connection() if not USE_SUPABASE else None
+        cursor = conn.cursor()   if conn else None
 
         try:
             feed    = feedparser.parse(feed_url)
@@ -999,34 +1027,62 @@ def scrape_all_feeds():
                 # Publication date + paywall — locale-aware
                 published_at = extract_published_at(entry)
                 is_paywalled = detect_paywall(entry, source_name, locale)
-                scraped_at   = datetime.now().isoformat()
+                scraped_at   = datetime.now(timezone.utc).isoformat()
 
+                if USE_SUPABASE:
+                    batch_rows.append({
+                        "url_hash":    hash_id,
+                        "title":       title,
+                        "link":        link,
+                        "summary":     summary,
+                        "source":      source_name,
+                        "country":     country,
+                        "category":    category,
+                        "tags":        tags_str,
+                        "topics":      topics_str,
+                        "scraped_at":  scraped_at,
+                        "published_at": published_at if published_at else None,
+                        "is_paywalled": is_paywalled,
+                        "locale":      locale,
+                    })
+                else:
+                    try:
+                        cursor.execute(f"""
+                            INSERT INTO articles
+                              (url_hash, title, link, summary, source, country,
+                               category, tags, topics, scraped_at, published_at,
+                               is_paywalled, locale)
+                            VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
+                        """, (
+                            hash_id, title, link, summary, source_name, country,
+                            category, tags_str, topics_str, scraped_at, published_at,
+                            is_paywalled, locale,
+                        ))
+                        new_count += 1
+                    except Exception:
+                        if USE_POSTGRES:
+                            conn.rollback()
+
+            # ── Flush to Supabase in one batch per source ──────────────────
+            if USE_SUPABASE and batch_rows:
                 try:
-                    cursor.execute(f"""
-                        INSERT INTO articles
-                          (url_hash, title, link, summary, source, country,
-                           category, tags, topics, scraped_at, published_at,
-                           is_paywalled, locale)
-                        VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
-                    """, (
-                        hash_id, title, link, summary, source_name, country,
-                        category, tags_str, topics_str, scraped_at, published_at,
-                        is_paywalled,
-                        locale,
-                    ))
-                    new_count += 1
-                except Exception:
-                    if USE_POSTGRES:
-                        conn.rollback()
+                    _supabase.table("articles").upsert(
+                        batch_rows, ignore_duplicates=True
+                    ).execute()
+                    new_count = len(batch_rows)
+                except Exception as e:
+                    print(f"     ⚠️  Supabase upsert error for {source_name}: {e}", flush=True)
 
-            conn.commit()
+            if conn:
+                conn.commit()
             print(f"     ✔  {new_count} new articles from {source_name}", flush=True)
             total_new += new_count
 
         except Exception as e:
             print(f"     ❌  Error scraping {source_name}: {e}", flush=True)
         finally:
-            conn.close()
+            if conn:
+                conn.close()
 
     print(f"\n🎉 Done! {total_new} new articles saved in total.", flush=True)
 
