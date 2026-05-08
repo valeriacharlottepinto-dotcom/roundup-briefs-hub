@@ -91,7 +91,8 @@ These are **build-time** variables (Vite bakes them in at build). They must also
 - `src/lib/constants.ts` — topic slugs, shared constants
 
 ### Scraper
-- `scraper_UPDATED.py` — Python scraper (Valeria's domain)
+- `scraper/scraper_UPDATED.py` — Python scraper (Valeria's domain)
+- `scraper/requirements.txt` — Python dependencies (runs on Render, not Cloudflare)
 
 ---
 
