@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { type Article, type Stats } from "@/lib/constants";
 
@@ -11,6 +11,7 @@ export interface Filters {
   dateFrom: string;
   dateTo: string;
   search: string;
+  freeOnly: boolean;
 }
 
 const defaultFilters: Filters = {
@@ -20,9 +21,8 @@ const defaultFilters: Filters = {
   dateFrom: "",
   dateTo: "",
   search: "",
+  freeOnly: false,
 };
-
-const PAGE_SIZE = 30;
 
 // ─── Locale resolution ────────────────────────────────────────────────────────
 // Accepts either a locale ("de" | "en") directly or a country name.
@@ -46,9 +46,6 @@ export function useArticles(localeOrCountry?: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(defaultFilters);
-  const [loadingOlder, setLoadingOlder] = useState(false);
-  const [olderLoaded, setOlderLoaded] = useState(false);
-  const [page, setPage] = useState(1);
 
   // ── Initial fetch ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -57,7 +54,6 @@ export function useArticles(localeOrCountry?: string) {
     async function fetchData() {
       setLoading(true);
       setError(null);
-      setOlderLoaded(false);
       setAllArticles([]);
 
       try {
@@ -67,7 +63,7 @@ export function useArticles(localeOrCountry?: string) {
           .eq("locale", locale)
           .order("published_at", { ascending: false, nullsFirst: false })
           .order("scraped_at", { ascending: false })
-          .limit(120);
+          .limit(150);
 
         if (cancelled) return;
         if (fetchError) throw fetchError;
@@ -75,9 +71,7 @@ export function useArticles(localeOrCountry?: string) {
         setAllArticles((data as Article[]) ?? []);
       } catch {
         if (!cancelled) {
-          setError(
-            "Artikel konnten nicht geladen werden — bitte lade die Seite neu."
-          );
+          setError("Couldn't load articles — please refresh the page.");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -89,36 +83,6 @@ export function useArticles(localeOrCountry?: string) {
       cancelled = true;
     };
   }, [locale]);
-
-  // ── Load older articles (up to 3 months back) ────────────────────────────
-  const loadOlderArticles = useCallback(async () => {
-    if (olderLoaded || loadingOlder) return;
-    setLoadingOlder(true);
-    try {
-      const threeWeeksAgo = new Date(
-        Date.now() - 21 * 24 * 60 * 60 * 1000
-      ).toISOString();
-      const threeMonthsAgo = new Date(
-        Date.now() - 90 * 24 * 60 * 60 * 1000
-      ).toISOString();
-
-      const { data } = await supabase
-        .from("articles")
-        .select("*")
-        .eq("locale", locale)
-        .gte("published_at", threeMonthsAgo)
-        .lt("published_at", threeWeeksAgo)
-        .order("published_at", { ascending: false })
-        .limit(200);
-
-      setAllArticles((prev) => [...prev, ...((data as Article[]) ?? [])]);
-      setOlderLoaded(true);
-    } catch {
-      // silently ignore
-    } finally {
-      setLoadingOlder(false);
-    }
-  }, [locale, olderLoaded, loadingOlder]);
 
   // ── Derived: stats ───────────────────────────────────────────────────────
   const stats = useMemo<Stats | null>(() => {
@@ -148,21 +112,13 @@ export function useArticles(localeOrCountry?: string) {
       filters.timeRange !== null ||
       filters.dateFrom !== "" ||
       filters.dateTo !== "" ||
-      filters.search !== "",
+      filters.search !== "" ||
+      filters.freeOnly,
     [filters]
   );
 
-  // ── Reset page when filters change ───────────────────────────────────────
-  const prevFilters = useRef(filters);
-  useEffect(() => {
-    if (prevFilters.current !== filters) {
-      setPage(1);
-      prevFilters.current = filters;
-    }
-  }, [filters]);
-
   // ── Derived: filtered article list ───────────────────────────────────────
-  const filteredArticles = useMemo(() => {
+  const articles = useMemo(() => {
     return allArticles.filter((article) => {
       // Topic filter
       if (filters.selectedTopics.length > 0) {
@@ -177,6 +133,11 @@ export function useArticles(localeOrCountry?: string) {
       // Source filter
       if (filters.selectedSources.length > 0) {
         if (!filters.selectedSources.includes(article.source)) return false;
+      }
+
+      // Free-only filter (hide paywalled articles)
+      if (filters.freeOnly && article.is_paywalled === true) {
+        return false;
       }
 
       // Time range filter
@@ -215,22 +176,8 @@ export function useArticles(localeOrCountry?: string) {
     });
   }, [allArticles, filters]);
 
-  // ── Derived: grouped vs flat + pagination ────────────────────────────────
-  const isGrouped = !isFiltered;
-  const totalCount = allArticles.length;
-  const totalPages = isGrouped
-    ? 1
-    : Math.max(1, Math.ceil(filteredArticles.length / PAGE_SIZE));
-
-  // Grouped view: pass all (sections handle their own SECTION_MAX limit)
-  // Flat view: paginate
-  const articles = isGrouped
-    ? filteredArticles
-    : filteredArticles.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
   const clearFilters = useCallback(() => {
     setFilters(defaultFilters);
-    setPage(1);
   }, []);
 
   return {
@@ -243,15 +190,6 @@ export function useArticles(localeOrCountry?: string) {
     setFilters,
     sources,
     isFiltered,
-    isGrouped,
     clearFilters,
-    page,
-    setPage,
-    totalPages,
-    totalCount,
-    loadOlderArticles,
-    loadingOlder,
-    olderLoaded,
-    hasOlderAvailable: !olderLoaded,
   };
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Masthead from "@/components/Masthead";
 import FilterBar from "@/components/FilterBar";
 import ArticleGrid from "@/components/ArticleGrid";
@@ -9,7 +9,7 @@ import ImprintPage from "@/components/ImprintPage";
 import ScrollButtons from "@/components/ScrollButton";
 import NewsletterModal from "@/components/NewsletterModal";
 import { useArticles } from "@/hooks/useArticles";
-import { SOURCES_BY_LOCALE, type Locale } from "@/lib/constants";
+import { type Locale } from "@/lib/constants";
 import { TRANSLATIONS } from "@/lib/translations";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -37,22 +37,10 @@ const Index = ({ locale }: IndexProps) => {
     error,
     filters,
     setFilters,
+    sources,
     isFiltered,
-    isGrouped,
     clearFilters,
-    page,
-    setPage,
-    totalPages,
-    totalCount,
   } = useArticles(locale);
-
-  const handleTopicClick = useCallback(
-    (topic: string) => {
-      setFilters((f) => ({ ...f, selectedTopics: [topic] }));
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    },
-    [setFilters]
-  );
 
   const handleAboutToggle = () => {
     setShowAbout((v) => !v);
@@ -72,7 +60,6 @@ const Index = ({ locale }: IndexProps) => {
         showAbout={showAbout}
         onAboutToggle={handleAboutToggle}
         locale={locale}
-        t={t}
         onNewsletterClick={() => setNewsletterOpen(true)}
       />
 
@@ -85,13 +72,10 @@ const Index = ({ locale }: IndexProps) => {
           <FilterBar
             filters={filters}
             setFilters={setFilters}
-            localeSources={SOURCES_BY_LOCALE[locale]}
+            sources={sources}
             articleCount={articles.length}
-            totalCount={totalCount}
             isFiltered={isFiltered}
             clearFilters={clearFilters}
-            locale={locale}
-            t={t}
           />
           <div className="pt-4 pb-8">
             <ArticleGrid
@@ -99,13 +83,7 @@ const Index = ({ locale }: IndexProps) => {
               loading={loading}
               error={error}
               isFiltered={isFiltered}
-              isGrouped={isGrouped}
               clearFilters={clearFilters}
-              page={page}
-              totalPages={totalPages}
-              setPage={setPage}
-              onTopicClick={handleTopicClick}
-              t={t}
             />
           </div>
         </>

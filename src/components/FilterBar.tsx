@@ -1,36 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { TOPICS } from "@/lib/constants";
 import { type Filters } from "@/hooks/useArticles";
-import { type Locale } from "@/lib/constants";
-import { type Translations } from "@/lib/translations";
 import { Search, X, ChevronDown, Check } from "lucide-react";
 
 interface FilterBarProps {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
-  localeSources: string[];
+  sources: string[];
   articleCount: number;
-  totalCount: number;
   isFiltered: boolean;
   clearFilters: () => void;
-  locale: Locale;
-  t: Translations;
 }
 
 const FilterBar = ({
   filters,
   setFilters,
-  localeSources,
+  sources,
   articleCount,
-  totalCount,
   isFiltered,
   clearFilters,
-  t,
 }: FilterBarProps) => {
   const [searchInput, setSearchInput] = useState(filters.search);
   const [sourceOpen, setSourceOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const sourceRef = useRef<HTMLDivElement>(null);
 
+  // Debounced search
   useEffect(() => {
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
@@ -39,6 +34,7 @@ const FilterBar = ({
     return () => clearTimeout(debounceRef.current);
   }, [searchInput, setFilters]);
 
+  // Close source dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (sourceRef.current && !sourceRef.current.contains(e.target as Node)) {
@@ -48,6 +44,19 @@ const FilterBar = ({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const toggleTopic = useCallback(
+    (label: string) => {
+      setFilters((f) => {
+        if (label === "All Topics") return { ...f, selectedTopics: [] };
+        const next = f.selectedTopics.includes(label)
+          ? f.selectedTopics.filter((t) => t !== label)
+          : [...f.selectedTopics, label];
+        return { ...f, selectedTopics: next };
+      });
+    },
+    [setFilters]
+  );
 
   const toggleSource = useCallback(
     (s: string) => {
@@ -65,6 +74,10 @@ const FilterBar = ({
     () => setFilters((f) => ({ ...f, selectedSources: [] })),
     [setFilters]
   );
+
+  const toggleFreeOnly = useCallback(() => {
+    setFilters((f) => ({ ...f, freeOnly: !f.freeOnly }));
+  }, [setFilters]);
 
   const selectToday = useCallback(() => {
     setFilters((f) => ({
@@ -90,30 +103,49 @@ const FilterBar = ({
 
   const sourceLabel =
     filters.selectedSources.length === 0
-      ? t.allSources
+      ? "All Sources"
       : filters.selectedSources.length === 1
       ? filters.selectedSources[0]
-      : `${filters.selectedSources.length} ${t.sources}`;
-
-  const countLabel = isFiltered
-    ? `${articleCount} / ${totalCount} ${t.articles}`
-    : `${totalCount} ${t.articles}`;
+      : `${filters.selectedSources.length} sources`;
 
   return (
     <div className="sticky top-0 z-30 bg-card border-b border-border">
-      <div className="max-w-[1100px] mx-auto px-4 py-3 space-y-2">
+      <div className="max-w-[1100px] mx-auto px-4 py-3 space-y-3">
 
-        {/* ROW A — Today + date range */}
+        {/* ROW A — Topic chip pills (horizontally scrollable) */}
+        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          {TOPICS.map((t) => {
+            const isAll = t.label === "All Topics";
+            const active = isAll
+              ? filters.selectedTopics.length === 0
+              : filters.selectedTopics.includes(t.label);
+            return (
+              <button
+                key={t.label}
+                onClick={() => toggleTopic(t.label)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-sm text-xs font-medium transition-colors whitespace-nowrap select-none ${
+                  active
+                    ? "bg-chip-active text-chip-active-foreground"
+                    : "bg-secondary text-secondary-foreground hover:bg-border"
+                }`}
+              >
+                {t.emoji} {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ROW B — Today + custom date range */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={selectToday}
             className={`px-3 py-1.5 rounded-sm text-xs font-medium transition-colors whitespace-nowrap select-none ${
               filters.timeRange === "today"
-                ? "bg-foreground text-background"
+                ? "bg-chip-active text-chip-active-foreground"
                 : "bg-secondary text-secondary-foreground hover:bg-border"
             }`}
           >
-            {t.quickToday}
+            Today
           </button>
           <span className="hidden sm:inline text-muted-foreground text-xs mx-1">📅</span>
           <input
@@ -121,29 +153,31 @@ const FilterBar = ({
             value={filters.dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
             className="text-xs px-2 py-1.5 rounded-sm border border-border bg-card text-foreground w-full sm:w-auto"
-            aria-label="From date"
+            aria-label="Date from"
           />
-          <span className="text-xs text-muted-foreground">{t.dateTo}</span>
+          <span className="text-xs text-muted-foreground">to</span>
           <input
             type="date"
             value={filters.dateTo}
             onChange={(e) => setDateTo(e.target.value)}
             className="text-xs px-2 py-1.5 rounded-sm border border-border bg-card text-foreground w-full sm:w-auto"
-            aria-label="To date"
+            aria-label="Date to"
           />
           {(filters.dateFrom || filters.dateTo) && (
             <button
               onClick={clearDates}
               className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Clear dates"
             >
               <X size={14} />
             </button>
           )}
         </div>
 
-        {/* ROW B — Search + Sources + Clear + Count */}
+        {/* ROW C — Search + Source dropdown + Free only + Clear + Count */}
         <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
 
+          {/* Search */}
           <div className="relative flex-1 min-w-0 sm:min-w-[180px] sm:max-w-[320px]">
             <Search
               size={14}
@@ -153,11 +187,12 @@ const FilterBar = ({
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={t.searchPlaceholder}
+              placeholder="Search headlines…"
               className="w-full text-xs pl-8 pr-3 py-1.5 rounded-sm border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
 
+          {/* Multi-select source dropdown */}
           <div ref={sourceRef} className="relative">
             <button
               onClick={() => setSourceOpen((o) => !o)}
@@ -185,10 +220,10 @@ const FilterBar = ({
                     onClick={clearSources}
                     className="w-full text-left px-3 py-2 text-xs text-primary hover:bg-secondary border-b border-border font-medium"
                   >
-                    {t.clearSelection} ({filters.selectedSources.length})
+                    Clear selection ({filters.selectedSources.length})
                   </button>
                 )}
-                {localeSources.map((s) => {
+                {sources.map((s) => {
                   const checked = filters.selectedSources.includes(s);
                   return (
                     <label
@@ -199,11 +234,13 @@ const FilterBar = ({
                       <span
                         className={`flex-shrink-0 w-3.5 h-3.5 border rounded-none flex items-center justify-center transition-colors ${
                           checked
-                            ? "bg-foreground border-foreground"
+                            ? "bg-chip-active border-chip-active"
                             : "border-border bg-background"
                         }`}
                       >
-                        {checked && <Check size={9} className="text-background" />}
+                        {checked && (
+                          <Check size={9} className="text-chip-active-foreground" />
+                        )}
                       </span>
                       <span
                         className={
@@ -219,6 +256,20 @@ const FilterBar = ({
             )}
           </div>
 
+          {/* Free-only toggle */}
+          <button
+            onClick={toggleFreeOnly}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-sm text-xs font-medium transition-colors whitespace-nowrap select-none ${
+              filters.freeOnly
+                ? "bg-chip-active text-chip-active-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-border"
+            }`}
+            title="Hide paywalled articles"
+          >
+            🔓 Free only
+          </button>
+
+          {/* Clear all + article count */}
           <div className="flex items-center gap-2 sm:ml-auto">
             {isFiltered && (
               <button
@@ -228,11 +279,11 @@ const FilterBar = ({
                 }}
                 className="text-xs text-primary hover:underline font-medium whitespace-nowrap"
               >
-                {t.clearAll}
+                Clear all
               </button>
             )}
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {countLabel}
+              {articleCount} article{articleCount !== 1 ? "s" : ""}
             </span>
           </div>
         </div>
