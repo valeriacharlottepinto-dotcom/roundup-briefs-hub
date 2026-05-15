@@ -4,17 +4,17 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import FeedPage       from "./pages/FeedPage";
-import MapPage        from "./pages/MapPage";
-import ThemenPage     from "./pages/ThemenPage";
-import AnalysisPage   from "./pages/AnalysisPage";
-import NewsletterPage from "./pages/NewsletterPage";
-import UeberUnsPage   from "./pages/UeberUnsPage";
-import NotFound       from "./pages/NotFound";
-
 import { AuthProvider } from "./contexts/AuthContext";
-import SavedPage   from "./pages/SavedPage";
-import ProfilePage from "./pages/ProfilePage";
+
+import Index from "./pages/Index";
+import GlobalMap from "./pages/GlobalMap";
+import Podcasts from "./pages/Podcasts";
+import About from "./pages/About";
+import Saved from "./pages/Saved";
+import Contact from "./pages/Contact";
+import Impressum from "./pages/Impressum";
+import Newsletter from "./pages/Newsletter";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -25,48 +25,26 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-        <Routes>
+          <Routes>
+            {/* ── Main feed (root + locale aliases) ── */}
+            <Route path="/" element={<Index />} />
+            <Route path="/de" element={<Index />} />
+            <Route path="/en" element={<Index />} />
 
-          {/* ── Landing: dark world map ── */}
-          <Route path="/" element={<MapPage />} />
+            {/* ── Static pages ── */}
+            <Route path="/map" element={<GlobalMap />} />
+            <Route path="/podcasts" element={<Podcasts />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/impressum" element={<Impressum />} />
+            <Route path="/newsletter" element={<Newsletter />} />
 
-          {/* ── Main locale feeds ── */}
-          <Route path="/de" element={<FeedPage country="Germany"       countryName="Deutsch" isMainFeed />} />
-          <Route path="/en" element={<FeedPage country="en"            countryName="English" isMainFeed />} />
+            {/* ── Auth-aware page ── */}
+            <Route path="/saved" element={<Saved />} />
 
-          {/* ── Country sub-feeds (DACH) ── */}
-          <Route path="/at" element={<FeedPage country="Austria"       countryName="Österreich" />} />
-          <Route path="/ch" element={<FeedPage country="Switzerland"   countryName="Schweiz" />} />
-
-          {/* ── Country sub-feeds (international) ── */}
-          <Route path="/es" element={<FeedPage country="Spain"         countryName="Spanien" />} />
-          <Route path="/it" element={<FeedPage country="Italy"         countryName="Italien" />} />
-          <Route path="/us" element={<FeedPage country="United States" countryName="USA" />} />
-          <Route path="/cn" element={<FeedPage country="China"         countryName="China" />} />
-          <Route path="/ug" element={<FeedPage country="Uganda"        countryName="Uganda" />} />
-          <Route path="/fi" element={<FeedPage country="Finland"       countryName="Finnland" />} />
-          <Route path="/tr" element={<FeedPage country="Turkey"        countryName="Türkei" />} />
-          <Route path="/ir" element={<FeedPage country="Iran"          countryName="Iran" />} />
-          <Route path="/za" element={<FeedPage country="South Africa"  countryName="Südafrika" />} />
-          <Route path="/in" element={<FeedPage country="India"         countryName="Indien" />} />
-
-          {/* ── Map ── */}
-          <Route path="/map" element={<MapPage />} />
-
-          {/* ── Static pages ── */}
-          <Route path="/themen"     element={<ThemenPage />} />
-          <Route path="/analyse"    element={<AnalysisPage />} />
-          <Route path="/newsletter" element={<NewsletterPage />} />
-          <Route path="/ueber-uns"  element={<UeberUnsPage />} />
-
-          {/* ── Auth-protected pages ── */}
-          <Route path="/de/saved" element={<SavedPage locale="de" />} />
-          <Route path="/en/saved" element={<SavedPage locale="en" />} />
-
-          {/* ── 404 ── */}
-          <Route path="*" element={<NotFound />} />
-
-        </Routes>
+            {/* ── 404 ── */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

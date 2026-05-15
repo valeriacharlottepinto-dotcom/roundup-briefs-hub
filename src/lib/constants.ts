@@ -1,6 +1,6 @@
 export type Locale = "en" | "de";
 
-export const API_BASE = "https://roundup-briefs.onrender.com";
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "https://roundup-briefs.onrender.com";
 
 export interface Article {
   id: number;

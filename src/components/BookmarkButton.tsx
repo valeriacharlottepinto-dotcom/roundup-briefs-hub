@@ -1,11 +1,18 @@
 import { Bookmark } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedArticles } from "@/hooks/useSavedArticles";
-import { type Article } from "@/lib/constants";
+import { type Article as ApiArticle } from "@/lib/api";
+import { type Article as ConstantsArticle } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
+// Accept either the api.ts or constants.ts Article shape — useSavedArticles
+// only needs id, title, link, source, published_at, topics, tags (+ optional
+// locale and is_paywalled). The Vercel pages use api.ts; legacy code uses
+// constants.ts.
+type BookmarkableArticle = ApiArticle | ConstantsArticle;
+
 interface BookmarkButtonProps {
-  article: Article;
+  article: BookmarkableArticle;
   className?: string;
 }
 
@@ -27,7 +34,9 @@ export default function BookmarkButton({
       if (isSaved(article.link)) {
         unsaveArticle(article.link);
       } else {
-        saveArticle(article);
+        // useSavedArticles' buildSnapshot tolerates missing locale/is_paywalled
+        // (defaults to "en" / false), so casting is safe at runtime.
+        saveArticle(article as ConstantsArticle);
       }
     });
   };

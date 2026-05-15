@@ -1,217 +1,207 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { API_BASE, type Article, type Stats } from "@/lib/constants";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { API_BASE, type Article, type Stats } from "@/lib/api";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ── Cache config ──────────────────────────────────────────────────────────────
+const MEM_TTL_MS = 2 * 60 * 60 * 1000;   // 2 h in-memory (no re-fetch within session)
+const LS_TTL_MS  = 24 * 60 * 60 * 1000;  // 24 h localStorage (stale-while-revalidate)
+const LS_PREFIX  = "sg_cache_v2_";
 
-export interface Filters {
-  selectedTopics: string[];
-  selectedSources: string[];
-  timeRange: string | null;
-  dateFrom: string;
-  dateTo: string;
-  search: string;
+interface ArticleCache {
+  articles: Article[];
+  fetchedAt: number;
 }
 
-const defaultFilters: Filters = {
-  selectedTopics: [],
-  selectedSources: [],
-  timeRange: null,
-  dateFrom: "",
-  dateTo: "",
-  search: "",
-};
+// In-memory cache — cleared on full page reload
+const articleCache: Record<string, ArticleCache> = {};
 
-// ─── Country → Locale mapping ─────────────────────────────────────────────────
-// DACH countries map to the German feed; everything else to English.
-
-const DACH_COUNTRIES = new Set(["Germany", "Austria", "Switzerland"]);
-
-function countryToLocale(country?: string): "de" | "en" {
-  if (!country) return "de";
-  return DACH_COUNTRIES.has(country) ? "de" : "en";
+function readLS(key: string): ArticleCache | null {
+  try {
+    const raw = localStorage.getItem(LS_PREFIX + key);
+    if (!raw) return null;
+    const parsed: ArticleCache = JSON.parse(raw);
+    if (Date.now() - parsed.fetchedAt > LS_TTL_MS) return null; // expired
+    return parsed;
+  } catch { return null; }
 }
 
-// ─── Date helpers ─────────────────────────────────────────────────────────────
-
-function dateStrDaysAgo(days: number): string {
-  return new Date(Date.now() - days * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
+function writeLS(key: string, cache: ArticleCache) {
+  try { localStorage.setItem(LS_PREFIX + key, JSON.stringify(cache)); } catch { /* quota */ }
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+// ── Retry helper ──────────────────────────────────────────────────────────────
+// Render free tier spins down after inactivity — retries handle cold starts.
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+async function fetchWithRetry(
+  url: string,
+  maxAttempts = 4,
+  baseDelayMs = 4000
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(15_000) });
+      if (res.ok) return res;
+      // Non-ok response (e.g. Render 404 during cold start) — treat as retryable
+      lastError = new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      lastError = err;
+    }
+    if (attempt < maxAttempts) {
+      // Exponential backoff: 4s, 8s, 16s
+      await sleep(baseDelayMs * Math.pow(2, attempt - 1));
+    }
+  }
+  throw lastError;
+}
 
 /**
- * Hybrid useArticles hook.
- *
- * Accepts Alex's `country?` routing parameter, maps it to Valeria's locale
- * (DACH → "de", all others → "en"), and fetches from Valeria's API at
- * API_BASE/api/articles?locale=…
- *
- * Returns Alex's full interface so FeedPage and FilterBar need no changes.
+ * Fetch articles (optionally filtered by country) + global stats.
+ * Results are cached for 2 hours so the hero article doesn't change on
+ * every navigation / component remount.
  */
-export function useArticles(country?: string) {
-  const locale = countryToLocale(country);
+export function useFeedArticles(country?: string) {
+  const cacheKey = country ?? "__all__";
 
-  const [allArticles, setAllArticles] = useState<Article[]>([]);
+  // Initialise from in-memory cache → localStorage → empty
+  const [articles, setArticles] = useState<Article[]>(() => {
+    if (articleCache[cacheKey]) return articleCache[cacheKey].articles;
+    const ls = readLS(cacheKey);
+    if (ls) { articleCache[cacheKey] = ls; return ls.articles; }
+    return [];
+  });
   const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Show loading screen only when we have absolutely no cached data
+  const [loading, setLoading] = useState(() => {
+    if (articleCache[cacheKey]) return false;
+    return !readLS(cacheKey);
+  });
+  const [waking, setWaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [filters, setFilters] = useState<Filters>(defaultFilters);
-  const [loadingOlder, setLoadingOlder] = useState(false);
-  const [olderLoaded, setOlderLoaded] = useState(false);
 
-  // ── Initial fetch ────────────────────────────────────────────────────────
   useEffect(() => {
+    const cached = articleCache[cacheKey];
+    const now = Date.now();
+
+    // In-memory cache still fresh — nothing to do
+    if (cached && now - cached.fetchedAt < MEM_TTL_MS) {
+      setLoading(false);
+      return;
+    }
+
+    // Stale-while-revalidate: if we already have data, fetch silently in background
+    const hasCachedData = !!(cached?.articles.length);
     let cancelled = false;
 
-    async function fetchData() {
-      setLoading(true);
+    async function load() {
+      if (!hasCachedData) {
+        setLoading(true);
+        setWaking(false);
+      }
       setError(null);
-      setOlderLoaded(false);
-      setAllArticles([]);
+
+      const wakingTimer = hasCachedData ? null : setTimeout(() => {
+        if (!cancelled) setWaking(true);
+      }, 3000);
 
       try {
-        const [articlesRes, statsRes] = await Promise.all([
-          fetch(`${API_BASE}/api/articles?locale=${locale}&limit=120`),
-          fetch(`${API_BASE}/api/stats`),
-        ]);
+        const countryParam = country ? `&country=${encodeURIComponent(country)}` : "";
+        const limit = country ? 100 : 200;
 
-        if (!articlesRes.ok || !statsRes.ok) {
-          throw new Error("Failed to fetch");
-        }
-
-        const articlesData = await articlesRes.json();
-        const statsData = await statsRes.json();
-
-        if (!cancelled) {
-          setAllArticles(Array.isArray(articlesData) ? articlesData : []);
-          setStats(statsData);
-        }
-      } catch {
-        if (!cancelled) {
-          setError(
-            "Artikel konnten nicht geladen werden. Der Server wacht möglicherweise gerade auf — bitte lade die Seite neu."
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    fetchData();
-    return () => { cancelled = true; };
-  }, [locale]);
-
-  // ── Load older articles (up to 3 months back) ────────────────────────────
-  const loadOlderArticles = useCallback(async () => {
-    if (olderLoaded || loadingOlder) return;
-    setLoadingOlder(true);
-    try {
-      const threeWeeksAgo = dateStrDaysAgo(21);
-      const threeMonthsAgo = dateStrDaysAgo(90);
-      const res = await fetch(
-        `${API_BASE}/api/articles?locale=${locale}&limit=200&date_from=${threeMonthsAgo}&date_to=${threeWeeksAgo}`
-      );
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      setAllArticles((prev) => [...prev, ...(Array.isArray(data) ? data : [])]);
-      setOlderLoaded(true);
-    } catch {
-      // silently ignore — user can retry by clicking the button again
-    } finally {
-      setLoadingOlder(false);
-    }
-  }, [locale, olderLoaded, loadingOlder]);
-
-  // ── Derived: unique sources list ─────────────────────────────────────────
-  const sources = useMemo(() => {
-    const s = new Set(allArticles.map((a) => a.source).filter(Boolean));
-    return Array.from(s).sort();
-  }, [allArticles]);
-
-  // ── Derived: is any filter active? ───────────────────────────────────────
-  const isFiltered = useMemo(
-    () =>
-      filters.selectedTopics.length > 0 ||
-      filters.selectedSources.length > 0 ||
-      filters.timeRange !== null ||
-      filters.dateFrom !== "" ||
-      filters.dateTo !== "" ||
-      filters.search !== "",
-    [filters]
-  );
-
-  // ── Derived: filtered article list ───────────────────────────────────────
-  const filteredArticles = useMemo(() => {
-    return allArticles.filter((article) => {
-      // Topic filter
-      if (filters.selectedTopics.length > 0) {
-        const articleTopics = (article.topics || "")
-          .split(",")
-          .map((t) => t.trim());
-        if (!filters.selectedTopics.some((t) => articleTopics.includes(t))) {
-          return false;
-        }
-      }
-
-      // Source filter
-      if (filters.selectedSources.length > 0) {
-        if (!filters.selectedSources.includes(article.source)) return false;
-      }
-
-      // Time range filter
-      const articleDate = new Date(article.published_at || article.scraped_at);
-      if (filters.timeRange === "today") {
-        const now = new Date();
-        const startOfToday = new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate()
+        const articlesRes = await fetchWithRetry(
+          `${API_BASE}/api/articles?limit=${limit}${countryParam}`
         );
-        if (articleDate < startOfToday) return false;
+        const articlesData: Article[] = await articlesRes.json();
+        const raw = Array.isArray(articlesData) ? articlesData : [];
+        const data = raw.map((a) => ({
+          ...a,
+          title: a.title
+            ?.replace(/\s*\[premium\+?\]\s*/gi, "")
+            .replace(/\s*\[abo\+?\]\s*/gi, "")
+            .replace(/\s*\[\+\]\s*/gi, "")
+            .replace(/\s*\[paywall\]\s*/gi, "")
+            .trim() ?? a.title,
+        }));
+
+        if (!cancelled) {
+          const cache: ArticleCache = { articles: data, fetchedAt: Date.now() };
+          articleCache[cacheKey] = cache;
+          writeLS(cacheKey, cache);
+          setArticles(data);
+        }
+
+        fetch(`${API_BASE}/api/stats`)
+          .then((r) => r.ok ? r.json() : null)
+          .then((statsData) => { if (!cancelled && statsData) setStats(statsData); })
+          .catch(() => {});
+      } catch {
+        if (!cancelled && !hasCachedData)
+          setError("Server nicht erreichbar. Bitte Seite neu laden.");
+      } finally {
+        if (wakingTimer) clearTimeout(wakingTimer);
+        if (!cancelled) { setLoading(false); setWaking(false); }
       }
+    }
 
-      // Date-from filter
-      if (filters.dateFrom && articleDate < new Date(filters.dateFrom)) {
-        return false;
-      }
+    load();
+    return () => { cancelled = true; };
+  }, [cacheKey, country]);
 
-      // Date-to filter
-      if (filters.dateTo) {
-        const to = new Date(filters.dateTo);
-        to.setDate(to.getDate() + 1);
-        if (articleDate >= to) return false;
-      }
+  return { articles, stats, loading, waking, error };
+}
 
-      // Full-text search
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        const inTitle = (article.title || "").toLowerCase().includes(q);
-        const inSummary = (article.summary || "").toLowerCase().includes(q);
-        if (!inTitle && !inSummary) return false;
-      }
+/**
+ * Fetch curated podcasts from the backend.
+ */
+export function usePodcasts() {
+  const [podcasts, setPodcasts] = useState<Record<string, string>[]>([]);
+  const [loading, setLoading] = useState(true);
 
-      return true;
-    });
-  }, [allArticles, filters]);
+  useEffect(() => {
+    fetchWithRetry(`${API_BASE}/api/podcasts`)
+      .then((r) => r.json())
+      .then((data) => setPodcasts(Array.isArray(data) ? data : []))
+      .catch(() => setPodcasts([]))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const clearFilters = useCallback(() => setFilters(defaultFilters), []);
+  return { podcasts, loading };
+}
 
-  return {
-    articles: filteredArticles,
-    allArticles,
-    stats,
-    loading,
-    error,
-    filters,
-    setFilters,
-    sources,
-    isFiltered,
-    clearFilters,
-    loadOlderArticles,
-    loadingOlder,
-    olderLoaded,
-    hasOlderAvailable: !olderLoaded,
-  };
+/**
+ * Fetch up to 10 articles for a specific country on demand.
+ * Caches the last fetched country to avoid duplicate requests.
+ */
+export function useCountryArticles() {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(false);
+  const fetchedRef = useRef<string | null>(null);
+
+  const fetchForCountry = useCallback(async (country: string) => {
+    if (fetchedRef.current === country) return; // already loaded
+    fetchedRef.current = country;
+    setArticles([]);
+    setLoading(true);
+
+    try {
+      const res = await fetchWithRetry(
+        `${API_BASE}/api/articles?limit=10&country=${encodeURIComponent(country)}`,
+        3, // fewer retries for on-demand map clicks
+        3000
+      );
+      const data = await res.json();
+      setArticles(Array.isArray(data) ? data : []);
+    } catch {
+      setArticles([]); // caller falls back gracefully
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const reset = useCallback(() => {
+    fetchedRef.current = null;
+    setArticles([]);
+  }, []);
+
+  return { articles, loading, fetchForCountry, reset };
 }
