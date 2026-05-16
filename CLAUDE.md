@@ -9,6 +9,38 @@ GitHub: **https://github.com/shared-ground-news/roundup-briefs-hub**
 
 ---
 
+## 🚨 PENDING ACTIONS — read this first
+
+### Open PR awaiting Valeria's review
+- **PR #3:** https://github.com/shared-ground-news/roundup-briefs-hub/pull/3
+- **Branch:** `alex/match-vercel-design`
+- **What it does:** Replaces the patchwork frontend with the cleaner newspaper-style design Alex prototyped on Vercel. Preserves all of Valeria's Supabase auth/save features.
+- **Branch preview (look at this before reviewing the code):** https://alex-match-vercel-design.sharedgroundnews.pages.dev — compare it side-by-side with https://shared-ground-frontend.vercel.app/ (Alex's reference)
+
+### ⚠️ Valeria — Render scraper deployment needs reconfiguration
+
+The PR moves `requirements.txt` and `scraper_UPDATED.py` from the repo root into a new `scraper/` subfolder. Reason: Cloudflare Pages auto-detected `requirements.txt` at the root and tried to install Python deps during the frontend build, which failed because `pg_config` wasn't available.
+
+**What Valeria needs to do on Render** (one-time fix, takes 2 minutes):
+
+1. Log into https://dashboard.render.com
+2. Click on the scraper service (probably named something like `roundup-briefs-germany` or `shared-ground-scraper`)
+3. Go to **Settings → Build & Deploy**
+4. Find the field **"Root Directory"**:
+   - **Before:** `/` (or empty)
+   - **Change to:** `scraper`
+5. Click **"Save Changes"**
+6. Trigger a manual deploy (top right) to confirm the build still works
+7. Once confirmed, the PR can be merged
+
+**If "Root Directory" doesn't exist on your plan** — alternative is to update the build/start commands instead:
+   - **Build Command:** `cd scraper && pip install -r requirements.txt`
+   - **Start Command:** `cd scraper && python scraper_UPDATED.py`
+
+After this is done and the PR is merged: Cloudflare Pages auto-deploys to production (`roundup-briefs-hub.pages.dev`).
+
+---
+
 ## Who does what
 | Person | Role | Focus |
 |--------|------|-------|
@@ -30,7 +62,7 @@ When working with Claude: tell it who you are at the start of a session if you'r
 - **React Hook Form** + **Zod** — forms and validation
 
 ### Backend / Data
-- **Python scraper** (`scraper_UPDATED.py`) — pulls ~30+ RSS feeds, keyword filtering, topic + identity tags, paywall detection
+- **Python scraper** (`scraper/scraper_UPDATED.py`) — pulls ~30+ RSS feeds, keyword filtering, topic + identity tags, paywall detection
 - **PostgreSQL on Render** — stores articles (accessed by the scraper)
 - **Supabase** — user auth (magic link + Google OAuth) + user data (saves, follows, preferences)
 
@@ -67,48 +99,61 @@ These are **build-time** variables (Vite bakes them in at build). They must also
 - `src/components/OnboardingModal.tsx` — topic selection after first sign-in
 - `src/lib/supabase.ts` — Supabase client (gracefully degrades if env vars missing)
 
+### Layout & Navigation
+- `src/components/Navbar.tsx` — top nav with Sign In, Saved, theme toggle (wired to `useAuth`)
+- `src/components/Footer.tsx` — footer
+
 ### Article feed
-- `src/pages/FeedPage.tsx` — main feed page, filters by locale/country
-- `src/components/ArticleCard.tsx` — article card with bookmark button
+- `src/pages/Index.tsx` — homepage with newspaper 3-column layout (sidebar / hero / podcasts) + WIRED-style category tabs
+- `src/components/FeaturedArticle.tsx` — hero article
+- `src/components/ArticleTile.tsx` — grid tile (with optional `article` prop that adds a BookmarkButton overlay)
+- `src/components/ArticleCardSmall.tsx` — sidebar list card
+- `src/components/PodcastCard.tsx` — podcast list item
+- `src/components/TopicFilterBar.tsx` — Alle / Politik / Kultur / Wirtschaft / Sport tabs
 - `src/components/BookmarkButton.tsx` — bookmark icon, calls `requireAuth()`
+- `src/hooks/useArticles.ts` — `useFeedArticles`, `usePodcasts`, `useCountryArticles`
 - `src/hooks/useSavedArticles.ts` — save/unsave logic via Supabase
+- `src/lib/api.ts` — Article/Stats types, category mapping, paywall detection
 
-### User pages
-- `src/pages/SavedPage.tsx` — saved articles at `/de/saved`, `/en/saved`
-- `src/pages/ProfilePage.tsx` — user profile
-
-### Static pages
-- `src/pages/ThemenPage.tsx` — topics overview (`/themen`)
-- `src/pages/AnalysisPage.tsx` — analysis/charts (`/analyse`)
-- `src/pages/NewsletterPage.tsx` — newsletter signup (`/newsletter`)
-- `src/pages/UeberUnsPage.tsx` — about us (`/ueber-uns`)
-- `src/components/ImprintPage.tsx` — legal imprint (Valeria Pinto & Alexandra Brandl)
+### Pages
+- `src/pages/Index.tsx` — main feed (`/`, `/de`, `/en`)
+- `src/pages/Podcasts.tsx` — podcasts page (`/podcasts`)
+- `src/pages/GlobalMap.tsx` — interactive world map (`/map`)
+- `src/pages/Newsletter.tsx` — newsletter signup (`/newsletter`)
+- `src/pages/About.tsx` — about us (`/about`)
+- `src/pages/Contact.tsx` — contact form (`/contact`)
+- `src/pages/Impressum.tsx` — legal imprint, Valeria + Alex (`/impressum`)
+- `src/pages/Saved.tsx` — saved articles (`/saved`, signed-in only — shows sign-in prompt otherwise)
+- `src/pages/NotFound.tsx` — 404
 
 ### Config
-- `wrangler.toml` — Cloudflare Pages config
+- `wrangler.toml` — Cloudflare Pages config (`pages_build_output_dir = "dist"`)
 - `vite.config.ts` — Vite config (PWA plugin lives here)
-- `tailwind.config.ts` — Tailwind theme
-- `src/lib/constants.ts` — topic slugs, shared constants
+- `tailwind.config.ts` — Tailwind theme (font-headline / font-body, accent-blue/orange/magenta)
+- `src/lib/constants.ts` — topic slugs, shared constants, `API_BASE` (reads `VITE_API_BASE_URL` env var)
 
 ### Scraper
-- `scraper_UPDATED.py` — Python scraper (Valeria's domain)
+- `scraper/scraper_UPDATED.py` — Python scraper (Valeria's domain)
+- `scraper/requirements.txt` — Python deps
+- `scraper/README.md` — how to run locally + Render setup notes
 
 ---
 
-## Routes
+## Routes (after PR #3)
 ```
-/           → redirects to /de
-/de         → German feed (main)
-/en         → English feed (main)
-/at /ch     → DACH country feeds
-/es /it /us /cn /ug /fi /tr /ir /za /in  → international feeds
-/themen     → topics page
-/analyse    → analysis/charts
+/           → main feed (Index)
+/de, /en    → aliases of Index (locale switching TBD)
+/map        → interactive world map (GlobalMap)
+/podcasts   → podcasts page
 /newsletter → newsletter signup
-/ueber-uns  → about us
-/de/saved   → saved articles (auth required)
-/en/saved   → saved articles (auth required)
+/about      → about us
+/contact    → contact form
+/impressum  → legal imprint
+/saved      → saved articles (auth-aware: shows sign-in prompt when logged out)
+*           → 404
 ```
+
+**Old country routes (`/at /ch /es /it /us /cn /ug /fi /tr /ir /za /in`) were dropped** as part of the Vercel-design adoption (Alex's call: "DE/EN only for now"). The data layer still supports country filtering — they can be re-added when needed.
 
 ---
 
